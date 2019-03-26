@@ -1,0 +1,29 @@
+<apex:page standardController="WorkOrder" docType="html-5.0" showHeader="false" standardStylesheets="false" cache="true" >
+
+<style>
+#sigContainer {
+    margin:inherit !important;
+}
+.typeIt {
+    display: none !important;
+}
+</style>
+
+<body style="font-size: 11pt;">
+    Date: <apex:outputText value="{0, date, MMMM d','  yyyy}">
+              <apex:param value="{!TODAY()}" />
+          </apex:outputText><br/>
+    Site ID:&nbsp;<apex:outputText value="{!WorkOrder.Account_Site_ID__c}"/><br/>
+    Partner Property Id:&nbsp;<apex:outputText value="{!WorkOrder.Third_Party_PropertyNum__c}" /><br/>
+    Property Name:&nbsp;<apex:outputText value="{!WorkOrder.Account_Name__c}" /><br/>
+    Signer Name:&nbsp;<apex:outputText value="{!WorkOrder.Signature_Name__c}"/><br/>
+    Signer Title:&nbsp;<apex:outputText value="{!WorkOrder.Customer_Title__c}" /><br/>
+    Case Number:&nbsp;<apex:outputText value="{!WorkOrder.Case_Number__c}"/><br/>
+    Partner Ticket Number:&nbsp;<apex:outputText value="{!WorkOrder.Third_Party_Ticket__c}" /><br/>
+    Invoice Summary:&nbsp;<apex:outputText value="{!WorkOrder.Invoice_Summary__c}" /><br/><br/>
+    
+    I authorize that the work noted was completed satisfactorily.<br/><br/>
+    
+    <EZSign:getSignature createPDFAttachment="true" saveLine="true" defaultAction="drawIt" />
+</body>
+</apex:page>

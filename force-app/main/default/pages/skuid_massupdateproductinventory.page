@@ -1,0 +1,5 @@
+<apex:page standardController="Account" extensions="skuid.Redirects" 
+       showHeader="true" sidebar="false" readonly="true" docType="html-5.0"
+        action="{!IF(canUseSkuid,'',redirect)}" title="{'Mass Update Product Inventory'}">
+    <skuid:page page="MassUpdateProductInventory" />
+</apex:page>

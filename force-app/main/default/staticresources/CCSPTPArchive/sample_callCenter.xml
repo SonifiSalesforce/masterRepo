@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<callCenter>
+  <section sortOrder="0" name="reqGeneralInfo" label="General Information">
+    <item sortOrder="0" name="reqInternalName" label="InternalName">CCSPIntegration</item>
+    <item sortOrder="1" name="reqDisplayName" label="Display Name">Enghouse Interactive CCSP</item>
+    <item sortOrder="2" name="reqDescription" label="Description">Enghouse Interactive CCSP CTI for ccu6.1.1</item>
+    <item sortOrder="3" name="reqAdapterUrl" label="CTI Adapter URL">https://CCU1.hyccu1.local/webagentsf/sf/sf_softphone.html</item>
+    <item sortOrder="4" name="reqUseApi" label="Use CTI API">true</item>
+    <item sortOrder="5" name="reqSoftphoneHeight" label="Softphone Height">400</item>
+    <item sortOrder="6" name="reqSoftphoneWidth" label="Softphone Width">230</item>
+  </section>
+  <section sortOrder="1" name="ServerInfo" label="CTC Server Information">
+    <item sortOrder="0" name="CTCServerName" label="CTC Server Name">https://bisei.hyccu1.local/hubservice/signalr</item>
+  </section>
+  <section sortOrder="2" name="reqDialingOptions" label="Dialing Options">
+    <item sortOrder="0" name="reqOutsidePrefix" label="Outside Prefix">9</item>
+    <item sortOrder="1" name="reqLongDistPrefix" label="Long Distance Prefix">1</item>
+    <item sortOrder="2" name="reqInternationalPrefix" label="International Prefix">011</item>
+  </section>
+  <section sortOrder="3" name="customOptions" label="Custom Options">
+    <item sortOrder="0" name="options" label="Options"></item>
+    <item sortOrder="1" name="lineOptions" label="Line Options"></item>
+    <item sortOrder="2" name="agentWrapUpCodes" label="Agent Wrap Up Codes"></item>
+    <item sortOrder="3" name="searchOptions" label="Search Options"></item>
+    <item sortOrder="4" name="inboundOmitSearchOptions" label="Inbound Omit Search List"></item>
+    <item sortOrder="5" name="inboundForceSearchOptions" label="Inbound Force Search List"></item>
+    <item sortOrder="6" name="outboundOmitSearchOptions" label="Outbound Omit Search List"></item>
+    <item sortOrder="7" name="outboundForceSearchOptions" label="Outbound Force Search List"></item>
+    <item sortOrder="8" name="CIMretryTimer" label="CIM Retry Timer">10</item>
+    <item sortOrder="9" name="ReportURL" label="Call Report Page URL"></item>
+    <item sortOrder="10" name="MaxInternalNumberLen" label="Maximum Internal Number Length"></item>
+  </section>
+</callCenter>

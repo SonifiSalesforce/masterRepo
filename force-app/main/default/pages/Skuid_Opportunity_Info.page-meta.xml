@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ApexPage xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>41.0</apiVersion>
+    <availableInTouch>true</availableInTouch>
+    <confirmationTokenRequired>false</confirmationTokenRequired>
+    <description>vf page for skuid table for displaying opportunity information on a sonifi work order</description>
+    <label>Skuid Opportunity Info</label>
+    <packageVersions>
+        <majorNumber>11</majorNumber>
+        <minorNumber>2</minorNumber>
+        <namespace>skuid</namespace>
+    </packageVersions>
+</ApexPage>

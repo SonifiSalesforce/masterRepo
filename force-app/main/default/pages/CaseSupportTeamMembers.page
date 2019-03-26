@@ -1,0 +1,111 @@
+<apex:page standardController="Case"
+        extensions="CaseSupportTeamMembersExtension">
+        
+    <style>
+        .noHistory {
+            color: black;
+            background: #f8f8f8;
+            border: 1px solid lightgray;
+            padding: 5px;
+        }
+        .list-member-id {
+            max-width: 220px;
+            min-width: 220px;
+        }
+    </style>   
+
+    <apex:form >
+        <apex:outputPanel id="SupportOfficeMembers">
+            <input type="hidden" value="{!Case.Account.Support_Office__c}" />
+            <input type="hidden" value="{!Case.Account.Observes_DST__c}" />
+            <input type="hidden" value="{!Case.Account.UTC_Offset__c}" />
+            
+            <div id="team-member-list">
+                
+                <apex:pageBlock mode="{!displayMode}" rendered="{!!displaySite}">
+                    
+                    <apex:pageMessages showDetail="true" escape="false" />
+                    
+                    <!-- <apex:pageBlockButtons location="top">
+                        <apex:commandButton action="{!edit}" id="editButton" value="Edit" rendered="{!!isEditMode}" />
+                        <apex:commandButton action="{!cancel}" id="cancelButton" value="Cancel" style="display: {!IF(isEditMode, 'inherit', 'none')};" />
+                        <apex:commandButton action="{!save}" id="saveButton" value="Save" style="display: {!IF(isEditMode, 'inherit', 'none')};" />
+                    </apex:pageBlockButtons> -->
+                    
+                    <apex:pageBlockSection columns="2">
+                        
+                        <apex:outputPanel layout="block" styleClass="noHistory" rendered="{!AND(NOT(hasPageError),ISNULL(supportTeamMembers))}">
+                             No support team members found.
+                        </apex:outputPanel>
+                            
+                        <apex:repeat value="{!supportTeamMembers}" var="member" rendered="{!NOT(ISNULL(supportTeamMembers))}">
+                            
+                            
+                            <apex:pageBlockSectionItem rendered="{!!member.IsContact__c}">
+                                <apex:outputLabel value="{!member.Role__c}"/>
+                                <apex:outputPanel layout="block">
+                                    <apex:inputField styleClass="list-member-id" value="{!member.User__c}" rendered="{!isEditMode}"/>
+                                    <apex:outputField styleClass="list-member-id" value="{!member.User__c}" rendered="{!!isEditMode}">
+                                        <!-- <apex:inlineEditSupport event="ondblclick" 
+                                                showOnEdit="cancelButton, saveButton"
+                                                hideOnEdit="editButton" /> -->
+                                    </apex:outputField> 
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                            
+                            <apex:pageBlockSectionItem rendered="{!member.IsContact__c}">
+                                <apex:outputLabel value="{!member.Role__c}"/>
+                                <apex:outputPanel layout="block">
+                                    <apex:inputField styleClass="list-member-id" value="{!member.Contact__c}" rendered="{!isEditMode}" />
+                                    <apex:outputField styleClass="list-member-id" value="{!member.Contact__c}" rendered="{!!isEditMode}">
+                                        <!-- <apex:inlineEditSupport event="ondblclick" 
+                                                showOnEdit="cancelButton, saveButton"
+                                                hideOnEdit="editButton" /> -->
+                                    </apex:outputField> 
+                                </apex:outputPanel>
+                            </apex:pageBlockSectionItem>
+                            
+                            <apex:pageBlockSectionItem >
+                                <apex:outputLabel value="{!$ObjectType.SupportOfficeMember__c.fields.MobilePhone__c.label}"/>
+                                <apex:outputText value="{!member.MobilePhone__c}" escape="false"/> 
+                            </apex:pageBlockSectionItem>
+                            
+                        </apex:repeat>
+                        
+                    </apex:pageBlockSection>
+                </apex:pageBlock>
+            </div>
+            
+            <apex:pageBlock mode="maindetail" rendered="{!displaySite}">
+                
+                <apex:pageMessages showDetail="true" escape="false" />
+                
+                 <apex:outputPanel layout="block" styleClass="noHistory" rendered="{!AND(NOT(hasPageError),displaySite,ISNULL(supportTeamMembers))}"> 
+                         No support team members found.
+                </apex:outputPanel>
+                
+                <apex:pageBlockSection columns="2">
+                    
+                    <apex:pageBlockTable value="{!supportTeamMembers}" var="member" rendered="{!AND(NOT(hasPageError),!ISNULL(supportTeamMembers),displaySite)}" columns="5" width="100%">
+                        
+                        <apex:column styleClass="list-member-id">
+                            <apex:facet name="header">Role</apex:facet>
+                             <apex:outputText value="{!member.Role__c}" rendered="{!!member.IsContact__c}" />
+                             <apex:outputText value="{!member.Role__c}" rendered="{!member.IsContact__c}" />
+                        </apex:column>
+                        <apex:column styleClass="list-member-id">
+                            <apex:facet name="header">User</apex:facet>
+                             <apex:outputText value="{!member.User__r.Name}" rendered="{!!member.IsContact__c}" />
+                             <apex:outputText value="{!member.Contact__r.Name}" rendered="{!member.IsContact__c}" />
+                        </apex:column>
+                        
+                        <apex:column styleClass="list-member-id" value="{!member.MobilePhone__c}" rendered="true" />
+                        <apex:column styleClass="list-member-id" value="{!member.Email__c}" rendered="true"/>
+                        <apex:column styleClass="list-member-id" value="{!member.Phone__c}" rendered="true" />
+                        
+                    </apex:pageBlockTable>
+                </apex:pageBlockSection>
+            </apex:pageBlock>
+        </apex:outputPanel>
+    </apex:form>
+</apex:page>

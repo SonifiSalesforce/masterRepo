@@ -1,0 +1,119 @@
+<apex:page standardcontroller="Work_Order__c" extensions="ProjectSummaryController" wizard="true" standardStylesheets="true">
+    
+    
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js" />
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js" />
+    
+    <style type="text/css">
+        #treetable{
+            width:100%;
+        }
+        table.fancytree-ext-table tbody tr:nth-child(even){
+            background-color: #f4f4f8;
+        }
+        .alignCenter {
+           text-align: center;
+        }
+        .subColor {
+           color: #1FB25A;
+        }
+    </style>
+    
+    <link href="{!URLFOR($Resource.CustomResources, 'fancytree/src/skin-lion/ui.fancytree.css')}" rel="stylesheet" type="text/css"></link>
+    <script src="{!URLFOR($Resource.CustomResources, 'fancytree/src/jquery.fancytree.js')}" type="text/javascript"></script>
+    <script src="{!URLFOR($Resource.CustomResources, 'fancytree/src/jquery.fancytree.table.js')}" type="text/javascript"></script>
+    
+    
+    <script type="text/javascript">
+          $(function(){
+            // Attach the fancytree widget to an existing <div id="tree"> element
+            // and pass the tree options as an argument to the fancytree() function:
+            $("#installtreetable").fancytree({
+              source: {!installTreeJSON}
+
+            });
+
+            $("#canceltreetable").fancytree({
+              source: {!cancelTreeJSON},
+              renderNode: function(event,data){
+                  var node = data.node;
+                  if(node.data.netNew == true)
+                  {
+                      $('span[value='+node.data.title+']').css("color","red");
+                      //var $span = $(node.span);
+                      //$span.find("> span.fancytree-title").text(">> " + node.title).css("color","red");                 
+                  }
+              }              
+            });
+                $("#assettreetable").fancytree({
+              source: {!assetTreeJSON}
+            });
+            
+            //Assign colours to trees.  Items that are net new are green while Items that are net cancel are red
+            $("span:contains('++')").css("color","green");
+            $("span:contains('--')").css("color","red");
+            
+            
+          });
+          
+    </script>
+    
+    
+    <apex:pageMessages showDetail="true" escape="false" />
+    <apex:pageBlock id="AccountInformation">
+        <apex:pageBlockSection columns="2">
+            <apex:outputField value="{!acct.Site_ID__c}"/>
+            <apex:outputField value="{!acct.Name}"/>
+            <apex:outputField value="{!acct.Physical_Street_Address_Line_1__c}"/>
+            <apex:outputField value="{!acct.Physical_City__c}"/>
+            <apex:outputField value="{!acct.Physical_Street_Address_Line_2__c}"/>
+            <apex:outputField value="{!acct.Physical_State__c}"/>
+            <apex:outputField value="{!acct.Phone}"/>
+            <apex:outputField value="{!acct.Physical_Postal_Code__c}"/>
+            <apex:outputField value="{!acct.of_Rooms__c}"/>
+            
+        </apex:pageBlockSection>
+    </apex:pageBlock>
+    <apex:pageBlock id="itemList">
+        <apex:pageBlockSection id="netNew">
+            Net New
+            <div id="installtreetable">
+            </div>
+        </apex:pageBlockSection>
+        <apex:pageBlockSection id="cancel">
+            Cancellation
+            <div id="canceltreetable">
+            </div>
+        </apex:pageBlockSection>
+        <apex:pageBlockSection id="asset">
+            Product Inventory
+            <div id="assettreetable">
+            </div>
+        </apex:pageBlockSection>
+    </apex:pageBlock>
+    <apex:pageBlock id="ContractInformation" rendered="{!contracts.size>0}">
+        <apex:repeat value="{!contracts}" var="contract">
+            <apex:pageBlockSection columns="2" title="Contract : {!contract.name}" rendered="{!isContractor == false}">
+                <apex:outputField value="{!contract.Contract_Type__c}"/>
+                <apex:outputField value="{!contract.Name}"/>
+                <apex:outputField value="{!contract.Type__c}"/>
+                <apex:outputField value="{!contract.Contract_Term_months__c}"/>
+                <apex:outputField value="{!contract.Auto_Renew__c}"/>    
+                <apex:outputField value="{!contract.Contract_End_Date__c}"/>
+                <apex:outputField value="{!contract.LITs__c}" rendered="{!CONTAINS(contract.Contract_Type__c,'iTV')}"/>
+                <apex:outputField value="{!contract.Media_DS_Contract_ID__c}" rendered="{!CONTAINS(contract.Contract_Type__c, 'FTG')}"/>
+                <apex:outputField value="{!contract.MATV_Waiver__c}" rendered="{!CONTAINS(contract.Contract_Type__c, 'FTG')}"/>
+                <apex:outputField value="{!contract.TOD_Project_E__c}" rendered="{!CONTAINS(contract.Contract_Type__c, 'FTG')}"/>
+                <apex:outputField value="{!contract.TOD_Sub_K__c}" rendered="{!CONTAINS(contract.Contract_Type__c, 'FTG')}"/>
+                <apex:outputField value="{!contract.PS_DS_Contract_ID__c}" rendered="{!CONTAINS(contract.Contract_Type__c, 'PV')}"/>
+                <apex:outputField value="{!contract.Scope_of_Work__c}" />
+            </apex:pageBlockSection>
+            <apex:pageBlockSection columns="2" title="Contract : {!contract.name}" rendered="{!isContractor == true}">
+                <apex:outputField value="{!contract.Contract_Type__c}"/>
+                <apex:outputField value="{!contract.Scope_of_Work__c}" />
+            </apex:pageBlockSection>
+            
+            <br/><br/>
+        </apex:repeat>
+    </apex:pageBlock>
+</apex:page>

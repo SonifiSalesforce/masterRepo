@@ -1,0 +1,5 @@
+<apex:page standardController="WorkOrder" extensions="skuid.Redirects" 
+       showHeader="true" sidebar="false" readonly="true" docType="html-5.0"
+        action="{!IF(canUseSkuid,'',redirect)}" title="{'Work Order Line Items'}">
+    <skuid:page page="WorkOrderLineItemEdit" />
+</apex:page>

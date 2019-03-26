@@ -1,0 +1,196 @@
+<apex:page standardController="Order__c" extensions="OrderItemHierarchyExtension" cache="false">
+
+
+            <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js" />
+            <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js" />
+        
+            <style type="text/css">
+                #treetable{
+                    width:100%;
+                }
+                table.fancytree-ext-table tbody tr:nth-child(even){
+                    background-color: #f4f4f8;
+                }
+                .alignCenter {
+                   text-align: center;
+                }
+                .subColor {
+                   color: #1FB25A;
+                }
+            </style>
+            
+            <link href="{!URLFOR($Resource.CustomResources, 'fancytree/src/skin-lion/ui.fancytree.css')}" rel="stylesheet" type="text/css"></link>
+            <script src="{!URLFOR($Resource.CustomResources, 'fancytree/src/jquery.fancytree.js')}" type="text/javascript"></script>
+            <script src="{!URLFOR($Resource.CustomResources, 'fancytree/src/jquery.fancytree.table.js')}" type="text/javascript"></script>
+            
+            
+            <script type="text/javascript">
+                j$ = jQuery.noConflict();
+
+                  j$(function(){
+                    // Attach the fancytree widget to an existing <div id="tree"> element
+                    // and pass the tree options as an argument to the fancytree() function:
+                    j$("#treetable").fancytree({
+                      extensions: ["table"],
+                      nodeColumnIdx: 1,
+                      selectMode: 3, // 1:single, 2:multi, 3:multi-hier
+                      checkbox: true,
+                      table: {
+                        indentation: 20,      // indent 20px per node level
+                      },
+                      source: {!treeJSON},
+                      
+                      select: function(event, data) {
+						var selectedNodes = data.tree.getSelectedNodes();
+		             	data.tree.rootNode.visit(function(node){
+							if(node.partsel && !node.selected) {
+								selectedNodes.push(node);
+							}
+						})                     
+			        	var selectedKeys = j$.map(selectedNodes, function(node){
+								return node.key;
+	        			});
+						passSelected(JSON.stringify(selectedKeys));
+
+                      },
+
+                      rendercolumns: function(e, data) {
+                        var node = data.node;
+                        $tdList = j$(node.tr).find(">td");
+                        //j$tdList.eq(2).html("<select name='dropdown'><option value='Maths' selected>Maths</option><option value='Physics'>Physics</option></select>");
+                        $tdList.eq(2).text(node.data.status).addClass("alignCenter");
+                        $tdList.eq(3).text(node.data.equipownership).addClass("alignCenter");
+                        $tdList.eq(4).text(node.data.roomsordered).addClass("alignCenter");
+                        $tdList.eq(5).text(node.data.remainingrooms).addClass("alignCenter");
+                        $tdList.eq(6).text(node.data.price).addClass("alignCenter");
+                      }
+                    });
+
+                      j$("#treetable").delegate("span[class='fancytree-title']", "click", function(event){
+                        event.stopPropagation();  // prevent fancytree activate for this row
+                        var node = j$.ui.fancytree.getNode(event);
+                        // Use <a> href and target attributes to load the content:
+                        if( node.data.href ){
+                        
+	                        var pathArray = window.location.href.split( '/' ); 
+							var host = pathArray[3]; 
+							if(host.valueOf() == new String("sonifipartners").valueOf())
+	                            window.open("/sonifipartners"+node.data.href, node.data.target);
+	                        else
+	                            window.open(node.data.href, node.data.target);
+                        }
+                      }); 
+    
+                  });
+                  
+ 
+                  
+                  
+                  
+                  
+                  function selectParents(node)
+                  {
+                      if(node.parent == null || node.parent == '')
+                          return;
+                      node.parent.selected = true;
+                      node.render();
+                      selectParents(node.parent);
+                  }
+                  function selectChildren(node)
+                  {
+                      var children = node.getChildren();
+                      if(children == null || children == '')
+                          return;
+                      
+                      j$.each(children,function(key,value){
+                          value.setSelected(true);
+                          selectChildren(value);
+                      });
+                      
+                  }
+            </script>
+        
+        <apex:form >
+            <apex:actionFunction name="passSelected" action="{!passSelected}" rerender="">
+                <apex:param name="x" value="x" assignTo="{!selectedKeysJSON}" />
+            </apex:actionFunction>
+
+            <div id="oiHierarchy">
+                <apex:pageBlock mode="maindetail">          
+                    <apex:pageBlockButtons location="top" rendered="{!!isPortalUser}">        
+	                    <apex:outputPanel style="padding-left: 1em;">
+						    <div class="menuButton" id="Actions"><apex:outputPanel layout="none">
+						        <div class="menuButtonButton" id="ActionsButton"><span class="menuButtonLabel" id="ActionsLabel">Create Work Order with Associated Items</span></div>
+						 
+						        <div class="menuButtonMenu" id="ActionsMenu"><apex:outputPanel layout="none">
+					        		<apex:repeat var="recordType" value="{!recordTypes}" >
+                        				<apex:commandLink action="{!createWorkOrder}" value="{!recordType}"  rerender="redirectPanel,pageMessages">
+                        			            <apex:param name="recordTypeParam" value="{!recordType}" assignTo="{!selectedWoRt}"/>
+					        			</apex:commandLink>
+					        		</apex:repeat>
+                        			<!--apex:commandLink action="{!createWorkOrder}" value="Install"  rerender="redirectPanel,pageMessages">
+                        			            <apex:param name="recordTypeInstall" value="Install" assignTo="{!selectedWoRt}"/>
+                        			<apex:commandLink action="{!createWorkOrder}" value="De-Install" rerender="redirectPanel,pageMessages">
+                        			            <apex:param name="recordTypeDeInstall" value="De-Install" assignTo="{!selectedWoRt}"/>
+                        			</apex:commandLink>
+                        			<!--apex:commandLink action="{!createWorkOrder}" value="Upgrade" rerender="redirectPanel,pageMessages">
+                        			            <apex:param name="recordTypeUpgrade" value="Upgrade" assignTo="{!selectedWoRt}"/>
+                        			</apex:commandLink-->
+                        			<!-- apex:commandLink action="{!createWorkOrder}" value="Circuits" rerender="redirectPanel,pageMessages">
+                        			            <apex:param name="recordTypeCircuits" value="Circuits" assignTo="{!selectedWoRt}"/>
+                        			</apex:commandLink>
+                        			<apex:commandLink action="{!createWorkOrder}" value="Customization" rerender="redirectPanel,pageMessages">
+                        			            <apex:param name="recordTypeCustomization" value="Customization" assignTo="{!selectedWoRt}"/>
+                        			</apex:commandLink>
+                        			<apex:commandLink action="{!createWorkOrder}" value="De-Authorization" rerender="redirectPanel,pageMessages">
+                        			            <apex:param name="recordTypeDeAuthorization" value="De-Authorization" assignTo="{!selectedWoRt}"/>
+                        			</apex:commandLink>
+                        			<apex:commandLink action="{!createWorkOrder}" value="Rack Build" rerender="redirectPanel,pageMessages">
+                        			            <apex:param name="recordTypeRackBuild" value="Rack Build" assignTo="{!selectedWoRt}"/>
+                        			</apex:commandLink>
+                        			<apex:commandLink action="{!createWorkOrder}" value="Schedules" rerender="redirectPanel,pageMessages">
+                        			            <apex:param name="recordTypeSchedules" value="Schedules" assignTo="{!selectedWoRt}"/>
+                        			</apex:commandLink-->                        			
+						        </apex:outputPanel></div>
+						    </apex:outputPanel></div>
+						</apex:outputPanel>
+                        <apex:outputPanel id="redirectPanel" >
+            				<apex:outputText rendered="{!shouldRedirect}">
+                				<script type="text/javascript">
+                    				window.top.location.href = '{!redirectUrl}';
+                				</script>
+            				</apex:outputText>
+        				</apex:outputPanel>
+                    <script type="text/javascript">new MenuButton('Actions', false);</script>
+                    </apex:pageBlockButtons>                                        
+                     <apex:pageBlockSection columns="1">
+                        <apex:pageMessages showDetail="true" escape="false" id="pageMessages"/>
+                        <table id="treetable">
+                            <thead>
+                                <tr> 
+                                    <th></th>  
+                                    <th></th>
+                                    <th class="alignCenter">Status</th>
+                                    <th class="alignCenter">Part Ownership</th>
+                                    <th class="alignCenter">Total Rooms Ordered</th>
+                                    <th class="alignCenter">Total Remaining Rooms</th>
+                                    <th class="alignCenter">Price</th>             
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td></td>  
+                                    <td></td>  
+                                    <td></td>  
+                                    <td></td>  
+                                    <td></td>  
+                                    <td></td>  
+                                    <td></td>  
+                                </tr>
+                            </tbody>
+                        </table>
+                    </apex:pageBlockSection>
+                </apex:pageBlock>
+            </div>
+        </apex:form>
+</apex:page>

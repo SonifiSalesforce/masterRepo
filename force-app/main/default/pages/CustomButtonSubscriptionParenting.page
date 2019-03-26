@@ -1,0 +1,3 @@
+<apex:page standardcontroller="Contract" extensions="CustomButtonParentingExtension" action="{!CreateParentingHierarchy}">
+    <apex:pageMessages ></apex:pageMessages>
+</apex:page>

@@ -1,0 +1,983 @@
+<apex:page standardcontroller="Work_Order__c" extensions="WorkOrderItemHierarchyExtension" cache="false" docType="html-5.0" id="workorderitemhierarchy">
+
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
+    <script src="{!URLFOR($Resource.CustomResources, 'fancytree/src/jquery.fancytree.js')}" type="text/javascript"></script>
+    <script src="{!URLFOR($Resource.CustomResources, 'fancytree/src/jquery.fancytree.filter.js')}" type="text/javascript"></script>    
+    <script src="{!URLFOR($Resource.CustomResources, 'fancytree/src/jquery.fancytree.table.js')}" type="text/javascript"></script>
+    <link href="{!URLFOR($Resource.CustomResources, 'fancytree/src/skin-lion/ui.fancytree.css')}" rel="stylesheet" type="text/css"></link>
+    <link href="{!URLFOR($Resource.CustomResources, 'jquery-ui-1.8.7.custom.css')}" rel="stylesheet" type="text/css"></link>
+
+    <style type="text/css">
+        #treetable{
+            width:100%;
+        }
+        table.fancytree-ext-table tbody tr:nth-child(even){
+            background-color: #f4f4f8;
+        }
+        .alignCenter {
+           text-align: center;
+        }
+        td.ItemColumnHeader {
+               text-align: center;
+               font-weight: bold;
+        }
+        input.datapickerStyle {
+           text-align: center;
+           width: 75px;
+        }
+        input.quantityStyle {
+           text-align: right;
+           width: 75px;
+        }
+        div.hidden
+        {
+           display: none
+        }
+        .datePicker
+        {
+            position: fixed;
+            z-index: 99999;
+        }
+    </style>
+
+    <script type="text/javascript">
+        j$ = jQuery.noConflict();
+
+        var selectedKeys = [];
+        var selectedNodes = [];
+        var circuitNodes = [];
+        var customizeNodes = [];
+        var informationEdited = false;
+        var editedAssociatedItems = [];
+        var psChecked = new Array();
+        var isRackBuild = {!isRackBuild};
+        var isCircuits = {!isCircuitWorkOrder};
+        var isCustomize = {!isCustomWorkOrder};
+        var isQtyAdjustWorkOrder = {!isQtyAdjustWorkOrder};
+
+        window.onbeforeunload = function() {
+          if({!editMode} && informationEdited) {
+            return "You have unsaved changes!! Are you sure you wish to leave the page?";
+          }
+        }
+
+        function findIndex(array, property, value) {
+            var returnIndex = -1;
+            j$.each(array, function(index, result) {
+                if (result !== undefined) {
+                    if (result[property] === value) {
+                        returnIndex = index;
+                    }
+                }
+            });
+            return returnIndex;
+        }
+
+        function saveAssociatedentry (recordid, fieldname, value)
+        {
+             var editedAssociatedItem;
+             var editedAssociatedItemIndex = findIndex(editedAssociatedItems, 'RecordId', recordid);
+             if(editedAssociatedItemIndex == -1) {
+                editedAssociatedItem = JSON.parse('{!editedAssociatedItemJSON}');
+                editedAssociatedItem.RecordId = recordid;
+             } else {
+                editedAssociatedItem = editedAssociatedItems[editedAssociatedItemIndex];
+             }
+
+             var editedField;
+             var editedFieldIndex = findIndex(editedAssociatedItem.editedFields, 'FieldName', fieldname);
+             if(editedFieldIndex == -1) {
+                editedField = JSON.parse('{!editedFieldJSON}');
+                editedField.FieldName = fieldname;
+             } else {
+                editedField = editedAssociatedItem.editedFields[editedFieldIndex];
+             }
+             editedField.FieldValue = value;
+
+             if(editedFieldIndex == -1) {
+                editedAssociatedItem.editedFields.push(editedField);
+             } else {
+                editedAssociatedItem.editedFields[editedFieldIndex] = editedField;
+             }
+
+             if(editedAssociatedItemIndex == -1) {
+                editedAssociatedItems.push(editedAssociatedItem);
+             } else {
+                editedAssociatedItems[editedAssociatedItemIndex] = editedAssociatedItem;
+             }
+             informationEdited = true;
+        }
+
+
+        j$(function(){
+            // Attach the fancytree widget to an existing <div id="tree"> element
+            // and pass the tree options as an argument to the fancytree() function:
+            var statusSelectJSON ={!statusValuesJSON};
+            var monthChargedSelectJSON ={!monthChargedValuesJSON};
+            var quarterChargedSelectJSON ={!quarterChargedValuesJSON};
+            var yearChargedSelectJSON ={!yearChargedValuesJSON};
+
+            j$("#treetable").fancytree({
+                extensions: ["table"],
+                selectMode: 3, // 1:single, 2:multi, 3:multi-hier
+                checkbox: {!editMode},
+                debugLevel: 0,
+                table: {
+                    indentation: 20,      // indent 20px per node level
+                },
+                filter: {
+                    mode: "hide"
+                },
+                activate: function(e, data) {
+        //alert("activate " + data.node);
+                },
+                
+                source: {!treeJSON},
+                select: function(event, data) {
+                    event.stopPropagation();
+                    selectedNodes = data.tree.getSelectedNodes();
+                    if(data.node.selected) {
+                        j$.each(selectedNodes,function(key,value){
+                            selectParents(value,value);
+                        });
+                        selectedNodes = data.tree.getSelectedNodes();
+                    }
+                    selectedKeys = j$.map(selectedNodes, function(node){if(node.data.orderItemParent!=true){return node.key;}});
+                },
+                
+                rendercolumns: function(e, data) {
+                    var node = data.node;
+                    var statusUpdateOk = true;
+                    j$tdList = j$(node.tr).find(">td");
+
+                    if(node.data.orderItemColumnHeader==true) {
+
+                          j$tdList.eq(1).html(node.data.columnHeader1).addClass("ItemColumnHeader");
+                          j$tdList.eq(2).html(node.data.columnHeader2).addClass("ItemColumnHeader");
+                          j$tdList.eq(3).html(node.data.columnHeader3).addClass("ItemColumnHeader");
+                          j$tdList.eq(4).html(node.data.columnHeader4).addClass("ItemColumnHeader");
+                          j$tdList.eq(5).html(node.data.columnHeader5).addClass("ItemColumnHeader");
+                          j$tdList.eq(6).html(node.data.columnHeader6).addClass("ItemColumnHeader");
+                          j$tdList.eq(7).html(node.data.columnHeader7).addClass("ItemColumnHeader");
+                          j$tdList.eq(8).html(node.data.columnHeader8).addClass("ItemColumnHeader");
+                          j$tdList.eq(9).html(node.data.columnHeader9).addClass("ItemColumnHeader");
+                          j$tdList.eq(10).html(node.data.columnHeader10).addClass("ItemColumnHeader");
+                    }
+                    if (node.data.status == 'In Development') {
+                       statusUpdateOk = false;
+                    } else {
+                       statusUpdateOk = true;
+                    }
+
+                    if(node.data.orderItemParent==false) {
+
+                      if (node.data.RackbuildorderItem ==true)
+                      {
+                        if({!editMode} && statusUpdateOk){
+                            j$tdList.eq(1).html("<input id='modChannel_" + node.key + "' name='modChannel_" + node.key + "' type='text' value='"+ node.data.modChannel + "'>").addClass("alignCenter");
+                        } else {
+                            j$tdList.eq(1).text(node.data.modChannel).addClass("alignCenter");
+                        }
+
+
+                        if({!editMode} && statusUpdateOk){
+                            j$tdList.eq(2).html("<input id='recvChannel_" + node.key + "' name='recvChannel_" + node.key + "' type='text' value='"+ node.data.receiverChannel + "'>").addClass("alignCenter");
+                        } else {
+                            j$tdList.eq(2).text(node.data.receiverChannel).addClass("alignCenter");
+                        }
+
+
+                        if({!editMode} && statusUpdateOk){
+                            j$tdList.eq(3).html("<input id='receiverId_" + node.key + "' name='receiverId_" + node.key + "' type='text' value='"+ node.data.receiverId + "'>").addClass("alignCenter");
+                        } else {
+                            j$tdList.eq(3).text(node.data.receiverId).addClass("alignCenter");
+                        }
+
+                        if({!editMode} && statusUpdateOk){
+                            j$tdList.eq(4).html("<input id='cardidNumber_" + node.key + "' name='cardidNumber_" + node.key + "' type='text' value='"+ node.data.cardidNumber + "'>").addClass("alignCenter");
+                        } else {
+                            j$tdList.eq(4).text(node.data.cardidNumber).addClass("alignCenter");
+                        }
+
+
+                        if({!editMode} && statusUpdateOk){
+                            j$tdList.eq(5).html("<input id='serialNumber_" + node.key + "' name='serialNumber_" + node.key + "' type='text' value='"+ node.data.serialNumber + "'>").addClass("alignCenter");
+                        } else {
+                            j$tdList.eq(5).text(node.data.serialNumber).addClass("alignCenter");
+                        }
+
+                        if(node.data.displayProjectNumber==true){
+                            if({!editMode} && statusUpdateOk){
+                                j$tdList.eq(6).html("<input id='projectNumber_" + node.key + "' name='projectNumber_" + node.key + "' type='text' value='"+ node.data.projectNumber + "'>").addClass("alignCenter");
+                            } else {
+                                j$tdList.eq(6).text(node.data.projectNumber).addClass("alignCenter");
+                            }
+                        }
+
+                        var statusSelectString = j$("<select id='aiStatus_" + node.key + "' name='aiStatus_" + node.key + "'/>");
+
+                        if({!editMode} && statusUpdateOk){
+                            j$.each(statusSelectJSON, function (index,value) {
+                               j$option = j$("<option />", {value: value.value, text: value.label});
+                               if(value.value==node.data.status) {
+                                   j$option.prop("selected", true);
+                               }
+                               j$option.appendTo(statusSelectString);
+                            });
+
+                            j$tdList.eq(7).html(statusSelectString).addClass("alignCenter");
+                        } else {
+                            j$tdList.eq(7).text(node.data.status).addClass("alignCenter");
+                        }
+
+                        if({!editMode} && statusUpdateOk){
+                            j$tdList.eq(8).html("<input id='quantity_" + node.key + "' name='quantity_" + node.key + "' type='number' value='"+ node.data.quantity + "' class='quantityStyle'>").addClass("alignCenter");
+                        } else {
+                            j$tdList.eq(8).text(node.data.quantity).addClass("alignCenter");
+                        }
+
+                        //shawks 201810: CPQ - Comment out Delivery Method since not used in CPQ 
+                        //shawks - BUG-00176: Add Delivery Method; Read-Only since should edit on contract
+                        //j$tdList.eq(9).text(node.data.deliveryMethod).addClass("alignCenter");
+                        
+                      } else {
+
+                        var statusSelectString = j$("<select id='aiStatus_" + node.key + "' name='aiStatus_" + node.key + "'/>");
+
+                        if({!editMode} && statusUpdateOk){
+                            j$.each(statusSelectJSON, function (index,value) {
+                               j$option = j$("<option />", {value: value.value, text: value.label});
+                               if(value.value==node.data.status) {
+                                   j$option.prop("selected", true);
+                               }
+                               j$option.appendTo(statusSelectString);
+                            });
+
+                            j$tdList.eq(1).html(statusSelectString).addClass("alignCenter");
+                        } else {
+                            j$tdList.eq(1).text(node.data.status).addClass("alignCenter");
+                        }
+
+                        if({!editMode} && statusUpdateOk){
+                            j$tdList.eq(2).html("<input id='datapicker_bcd_" + node.key + "' name='datapicker_bcd_" + node.key + "' type='text' value='"+ node.data.billingDate + "' class='datapickerStyle'>");
+                        } else {
+                            j$tdList.eq(2).text(node.data.billingDate).addClass("alignCenter");
+                        }
+
+                        j$tdList.eq(3).text(node.data.projectType).addClass("alignCenter");
+
+
+                        if({!editMode} && statusUpdateOk){
+                            j$tdList.eq(4).html("<input id='quantity_" + node.key + "' name='quantity_" + node.key + "' type='number' value='"+ node.data.quantity + "' class='quantityStyle'>").addClass("alignCenter");
+                        } else {
+                            j$tdList.eq(4).text(node.data.quantity).addClass("alignCenter");
+                        }
+
+                        var monthChargedSelectString = j$("<select id='aiMonthCharged_" + node.key + "' name='aiMonthCharged_" + node.key + "'/>");
+                        j$.each(monthChargedSelectJSON, function (index,value) {
+                            j$option = j$("<option />", {value: value.value, text: value.label});
+                            if(value.value==node.data.monthCharged) {
+                                j$option.prop("selected", true);
+                            }
+                            j$option.appendTo(monthChargedSelectString);
+                        });
+                        if({!editMode} && statusUpdateOk){
+                            j$tdList.eq(5).html(monthChargedSelectString).addClass("alignCenter");
+                        } else {
+                            j$tdList.eq(5).text(node.data.monthCharged).addClass("alignCenter");
+                        }
+
+                        var quarterChargedSelectString = j$("<select id='aiQuarterCharged_" + node.key + "' name='aiQuarterCharged_" + node.key + "'/>");
+                        j$.each(quarterChargedSelectJSON, function (index,value) {
+                            j$option = j$("<option />", {value: value.value, text: value.label});
+                            if(value.value==node.data.quarterCharged) {
+                                j$option.prop("selected", true);
+                            }
+                            j$option.appendTo(quarterChargedSelectString);
+                        });
+                        if({!editMode} && statusUpdateOk){
+                            j$tdList.eq(6).html(quarterChargedSelectString).addClass("alignCenter");
+                        } else {
+                            j$tdList.eq(6).text(node.data.quarterCharged).addClass("alignCenter");
+                        }
+
+
+                        var yearChargedSelectString = j$("<select id='aiYearCharged_" + node.key + "' name='aiYearCharged_" + node.key + "'/>");
+                        j$.each(yearChargedSelectJSON, function (index,value) {
+                            j$option = j$("<option />", {value: value.value, text: value.label});
+                            if(value.value==node.data.yearCharged) {
+                                j$option.prop("selected", true);
+                            }
+                            j$option.appendTo(yearChargedSelectString);
+                        });
+                        if({!editMode} && statusUpdateOk){
+                            j$tdList.eq(7).html(yearChargedSelectString).addClass("alignCenter");
+                        } else {
+                            j$tdList.eq(7).text(node.data.yearCharged).addClass("alignCenter");
+                        }
+
+                        if(node.data.displayProjectNumber==true){
+                            if({!editMode} && statusUpdateOk){
+                                j$tdList.eq(8).html("<input id='projectNumber_" + node.key + "' name='projectNumber_" + node.key + "' type='text' value='"+ node.data.projectNumber + "'>").addClass("alignCenter");
+                            } else {
+                                j$tdList.eq(8).text(node.data.projectNumber).addClass("alignCenter");
+                            }
+                        }
+
+                        //shawks - BUG-00700 - Remove Partial; Add Price
+                        //if(node.data.partialOrder!=null){
+                        //    psChecked[node.key] = node.data.partialOrder;
+                        //    if(node.data.partialOrder==true){
+                        //        if({!editMode} && statusUpdateOk){
+                        //            j$tdList.eq(9).html("<input id='partialStatus_" + node.key + "' name='partialStatus_" + node.key + "' type='checkbox' checked>").addClass("alignCenter");
+                        //        } else {
+                        //            j$tdList.eq(9).html("<span><img src={!URLFOR($Resource.CustomResources, 'images/ResourceSucceeded.png')}></span>").addClass("alignCenter");
+                        //        }
+                        //    } else {
+                        //        if({!editMode} && statusUpdateOk){
+                        //            j$tdList.eq(9).html("<input id='partialStatus_" + node.key + "' name='partialStatus_" + node.key + "' type='checkbox' >").addClass("alignCenter");
+                        //        } else {
+                        //            j$tdList.eq(9).html("<span><img src={!URLFOR($Resource.CustomResources, 'images/ResourceFailed.png')}></span>").addClass("alignCenter");
+                        //        }
+                        //    }
+                        //} else {
+                        //    if({!editMode} && statusUpdateOk){
+                        //        j$tdList.eq(9).html("<input id='partialStatus_" + node.key + "' name='partialStatus_" + node.key + "' type='checkbox' >").addClass("alignCenter");
+                        //    } else {
+                        //        j$tdList.eq(9).html("<span><img src={!URLFOR($Resource.CustomResources, 'images/ResourceFailed.png')}></span>").addClass("alignCenter");
+                        //    }
+                        //}
+                        if(node.data.price!='0.00'){
+                          //Read-only since should edit price on Order Item
+                           j$tdList.eq(9).text(node.data.price).addClass("alignCenter");
+                        }
+                      } // end of node.data.RackbuildorderItem
+                    }
+
+                }
+            });
+
+
+            var compareValues = function(a, b) {
+                //alert('A title'+a.title+' A Mod '+a.data.mod+' B title '+b.title+ ' b mod '+b.data.mod);
+                
+                var c = a.data.mod;
+                var d = b.data.mod;
+                if(c != null && d == null)
+                    return 1;
+                else if (d != null && c == null)
+                    return -1;
+                if(a.folder == true && b.folder != true)
+                    return 1;
+                else if (a.folder != true && b.folder == true)
+                    return -1;
+                if(c > d)
+                    return 1;
+                else if(c < d)
+                    return -1;
+                else
+                    return 0;
+            };
+
+
+            if(isRackBuild)
+            {
+                var treeNode = j$("#treetable").fancytree("getTree").getNodeByKey("FTG");
+                if (treeNode != null) {
+                    treeNode.sortChildren(compareValues, true);
+                }
+            }
+            
+
+            j$("input[name^='datapicker_bcd']").datepicker({changeMonth: true,
+                                                            changeYear: true});
+
+
+            j$("#treetable").delegate("select[name^='aiStatus']", "change", function(event){
+                event.stopPropagation();  // prevent fancytree activate for this row
+                var selectedNode = j$.ui.fancytree.getNode(event),
+                    j$input = j$(event.target),
+                    aiRecordIds = [];
+
+                function _walkStatusSelect(node) {
+                    var i, l, child, aiRecordId,
+                        children = node.children,
+                        directSibling = false;
+
+                    if(children) {
+                        for(i=0, l=children.length; i<l; i++) {
+                            if(children[i]==selectedNode) {
+                                directSibling = true;
+                                break;
+                            }
+                        }
+                        for(i=0, l=children.length; i<l; i++) {
+                            child = children[i];
+                            // the selection state of a node is not relevant; we need the end-nodes
+                            if (child.data.orderItemParent==true ||(child.data.orderItemParent==false && directSibling==false)) {
+                                aiRecordId = _walkStatusSelect(child);
+                                if(child.data.orderItemParent==false) {
+                                    //jjohnson20140915 - Fix for enhancement BUG-00346
+                                    //aiRecordIds.push(aiRecordId);
+                                }
+                            }
+                        }
+                    }
+
+                    //jjohnson20140915 - Fix for enhancement BUG-00346
+                    //j$(node.tr).find(">td select[name='aiStatus_" + node.key +"'] option[value='" + j$input.val() + "']").prop('selected', true);
+                    return node.key;
+                }
+                _walkStatusSelect(selectedNode.parent);
+                aiRecordIds.push(selectedNode.key);
+
+                for(i=0, l=aiRecordIds.length; i<l; i++) {
+                    var aiRecordId = aiRecordIds[i];
+                    saveAssociatedentry (aiRecordId, 'Status__c', j$input.val());
+                }
+
+            });
+
+            
+            j$("#treetable").delegate("input[name^='datapicker_bcd']", "keydown", function(event){
+                event.stopPropagation();  // prevent fancytree activate for this row
+            });
+            
+            
+            j$("#treetable").delegate("input[name^='datapicker_bcd']", "change", function(event){
+                event.stopPropagation();  // prevent fancytree activate for this row
+
+                var tree = j$("#treetable").fancytree("getTree");
+                var nodeKey = event.target.name.replace("datapicker_bcd_","");
+                var selectedNodeByKey = tree.getNodeByKey(nodeKey);
+                var j$input = j$(event.target)
+                    aiRecordIds = [];
+                saveAssociatedentry (selectedNodeByKey.key, 'Billing_Commencement_Date__c', j$input.val());
+            });
+
+            
+            j$("#treetable").delegate("input[name^='projectNumber']", "keydown", function(event){
+                event.stopPropagation();  // prevent fancytree activate for this row
+            });
+            
+            
+            j$("#treetable").delegate("input[name^='projectNumber']", "change", function(event){
+                event.stopPropagation();  // prevent fancytree activate for this row
+                var selectedNode = j$.ui.fancytree.getNode(event),
+                    j$input = j$(event.target);
+                saveAssociatedentry (selectedNode.key, 'Project_Number__c', j$input.val());
+            });
+
+
+            j$("#treetable").delegate("input[name^='quantity']", "keydown", function(event){
+                event.stopPropagation();  // prevent fancytree activate for this row
+            });
+            
+            
+            j$("#treetable").delegate("input[name^='quantity']", "change", function(event){
+                event.stopPropagation();  // prevent fancytree activate for this row
+                var selectedNode = j$.ui.fancytree.getNode(event),
+                    j$input = j$(event.target);
+                saveAssociatedentry (selectedNode.key, 'Quantity__c', j$input.val());
+            });
+
+            //shawks - BUG-00700 - Remove Partail
+            //j$("#treetable").delegate("input[name^='partialStatus']", "click", function(event){
+            //    event.stopPropagation();  // prevent fancytree activate for this row
+            //    var selectedNode = j$.ui.fancytree.getNode(event),
+            //    j$input = j$(event.target);
+            //    if (psChecked[selectedNode.key])
+            //    {
+            //      psChecked[selectedNode.key] = false;
+            //    } else {
+            //      psChecked[selectedNode.key] = true;
+            //    }
+            //    saveAssociatedentry (selectedNode.key,'Partial_Order__c', psChecked[selectedNode.key]);
+            //});
+
+
+            j$("#treetable").delegate("select[name^='aiMonthCharged']", "change", function(event){
+                event.stopPropagation();  // prevent fancytree activate for this row
+                var selectedNode = j$.ui.fancytree.getNode(event),
+                    j$input = j$(event.target)
+
+                saveAssociatedentry (selectedNode.key,'Month_Cha__c', j$input.val());
+            });
+
+
+            j$("#treetable").delegate("select[name^='aiQuarterCharged']", "change", function(event){
+                event.stopPropagation();  // prevent fancytree activate for this row
+                var selectedNode = j$.ui.fancytree.getNode(event),
+                    j$input = j$(event.target)
+
+                saveAssociatedentry (selectedNode.key,'Quarter_Assigned_To__c', j$input.val());
+            });
+
+
+            j$("#treetable").delegate("select[name^='aiYearCharged']", "change", function(event){
+                event.stopPropagation();  // prevent fancytree activate for this row
+                var selectedNode = j$.ui.fancytree.getNode(event),
+                    j$input = j$(event.target)
+
+                saveAssociatedentry (selectedNode.key,'Year_Charged_To__c', j$input.val());
+            });
+
+
+            j$("#treetable").delegate("span[class='fancytree-title']", "click", function(event){
+                event.stopPropagation();  // prevent fancytree activate for this row
+                var node = j$.ui.fancytree.getNode(event);
+                // Use <a> href and target attributes to load the content:
+                if( node.data.href ){
+                    window.open(node.data.href, node.data.target);
+                }
+            });
+
+
+            j$("#treetable").delegate("input[name^='modChannel']", "keydown", function(event){
+                event.stopPropagation();  // prevent fancytree activate for this row
+            });
+            
+            j$("#treetable").delegate("input[name^='modChannel']", "change", function(event){
+                event.stopPropagation();  // prevent fancytree activate for this row
+                var selectedNode = j$.ui.fancytree.getNode(event),
+                    j$input = j$(event.target);
+                saveAssociatedentry (selectedNode.key, 'Mod_Channel__c', j$input.val());
+            });
+            
+            
+            j$("#treetable").delegate("input[name^='recvChannel']", "keydown", function(event){
+                event.stopPropagation();  // prevent fancytree activate for this row
+            });
+            
+            j$("#treetable").delegate("input[name^='recvChannel']", "change", function(event){
+                event.stopPropagation();  // prevent fancytree activate for this row
+                var selectedNode = j$.ui.fancytree.getNode(event),
+                    j$input = j$(event.target);
+                saveAssociatedentry (selectedNode.key, 'Receiver_Channel__c', j$input.val());
+            });
+
+
+            j$("#treetable").delegate("input[name^='receiverId']", "keydown", function(event){
+                event.stopPropagation();  // prevent fancytree activate for this row
+            });
+            
+            j$("#treetable").delegate("input[name^='receiverId']", "change", function(event){
+                event.stopPropagation();  // prevent fancytree activate for this row
+                var selectedNode = j$.ui.fancytree.getNode(event),
+                    j$input = j$(event.target);
+                saveAssociatedentry (selectedNode.key, 'Receiver_ID__c', j$input.val());
+            });
+
+
+            j$("#treetable").delegate("input[name^='cardidNumber']", "keydown", function(event){
+                event.stopPropagation();  // prevent fancytree activate for this row
+            });
+            
+            j$("#treetable").delegate("input[name^='cardidNumber']", "change", function(event){
+                event.stopPropagation();  // prevent fancytree activate for this row
+                var selectedNode = j$.ui.fancytree.getNode(event),
+                    j$input = j$(event.target);
+                saveAssociatedentry (selectedNode.key, 'Card_ID__c', j$input.val());
+            });
+
+
+            j$("#treetable").delegate("input[name^='serialNumber']", "keydown", function(event){
+                event.stopPropagation();  // prevent fancytree activate for this row
+            });
+            
+            j$("#treetable").delegate("input[name^='serialNumber']", "change", function(event){
+                event.stopPropagation();  // prevent fancytree activate for this row
+                var selectedNode = j$.ui.fancytree.getNode(event),
+                    j$input = j$(event.target);
+                saveAssociatedentry (selectedNode.key, 'Serial_Number__c', j$input.val());
+            });
+
+            //j$("#treetable").delegate("input[name^='projectNumber']", "change", function(event){
+            //    event.stopPropagation();  // prevent fancytree activate for this row
+            //    var selectedNode = j$.ui.fancytree.getNode(event),
+            //        j$input = j$(event.target);
+            //    saveAssociatedentry (selectedNode.key, 'Project_Number__c', j$input.val());
+            //});
+
+            initializeComponent();
+            
+            
+            if(isCircuits)
+            {
+                var treeNode = j$("#treetable").fancytree("getTree");
+                treeNode.visit(function(node){
+                    if(node.data.circuit == true)
+                    {
+                        node.setTitle(node.title+"^");
+                        circuitNodes.push(node);    
+                    }
+                });
+                
+                var parents = [];
+                j$.each(circuitNodes, function(key,value){
+                    parents = value.getParentList(true,false);
+                    j$.each(parents,function(key,value){
+                        value.setTitle(value.title+"^");
+                        value.data.circuit = true;
+                    });
+                });
+                treeNode.visit(function(node){
+                    if(node.title.indexOf("^") == -1)
+                    {
+                        node.setTitle(node.title+"$");
+                    }
+                });
+                
+                var tree1 = j$("#treetable").fancytree("getRootNode");
+                var allnon = tree1.findAll("$");
+                j$.each(allnon,function(key,value){
+                    if(value.title == "$")
+                        value.setTitle("");
+                    if(value.parent != null && value.title != "")
+                        value.remove();
+                });
+                treeNode.visit(function(node){
+                    if(node.title.indexOf("^") != -1)
+                    {
+                        node.setTitle(node.title.replace('^',''));
+                    }
+                });
+                tree1 = j$("#treetable").fancytree("getRootNode");
+                                tree1.visit(function(node){
+                    if(node.title.indexOf("^") != -1)
+                    {
+                        node.setTitle(node.title.replace('^',''));
+                    }
+                });
+                
+            }
+
+
+            if(isCustomize)
+            {
+                var treeNode = j$("#treetable").fancytree("getTree");
+                treeNode.visit(function(node){
+                    if(node.data.customization == true)
+                    {
+                        node.setTitle(node.title+"^");
+                        customizeNodes.push(node);    
+                    }
+                });
+                
+                var parents = [];
+                j$.each(customizeNodes, function(key,value){
+                    parents = value.getParentList(true,false);
+                    j$.each(parents,function(key,value){
+                        value.setTitle(value.title+"^");
+                        value.data.customize = true;
+                    });
+                });
+                treeNode.visit(function(node){
+                    if(node.title.indexOf("^") == -1)
+                    {
+                        node.setTitle(node.title+"$");
+                    }
+                });
+                
+                var tree1 = j$("#treetable").fancytree("getRootNode");
+                var allnon = tree1.findAll("$");
+                j$.each(allnon,function(key,value){
+                    if(value.title == "$")
+                        value.setTitle("");
+                    if(value.parent != null)
+                        value.remove();
+                });
+                treeNode.visit(function(node){
+                    if(node.title.indexOf("^") != -1)
+                    {
+                        node.setTitle(node.title.replace('^',''));
+                    }
+                }
+                );
+                tree1 = j$("#treetable").fancytree("getRootNode");
+                tree1.visit(function(node){
+                    if(node.title.indexOf("^") != -1)
+                    {
+                        node.setTitle(node.title.replace('^',''));
+                    }
+                });
+                
+                
+            }
+        });
+
+        function selectParents(node,originalNodeSelected){
+            if(node.parent == null || node.parent == '')
+                return;
+            if(node.parent!=originalNodeSelected.parent){
+                j$.each(node.parent.children,function(key,value){
+                    if(value.data.orderItemParent==false){
+                        value.setSelected(true);
+                        value.render();
+                    }
+                });
+            }
+            //selectParents(node.parent,originalNodeSelected);
+        }
+
+        function selectChildren(node,originalNodeSelected){
+            var children;
+
+            if(node==originalNodeSelected) {
+                children= node.parent.getChildren();
+            } else {
+                children= node.getChildren();
+            }
+
+            if(children == null || children == '')
+                return;
+
+            j$.each(children,function(key,value){
+                if(value != originalNodeSelected){
+                        if(value.parent != originalNodeSelected.parent) {
+                            value.setSelected(true);
+                        }
+                    if(value.data.orderItemParent==false) {
+
+                        selectChildren(value,originalNodeSelected);
+                    }
+
+                }
+            });
+        }
+
+        function cloneItems(){
+            if(selectedKeys == null || selectedKeys.length == 0) {
+                window.alert("No Items have been selected to clone");
+                return;
+            }
+            doCloneItems(JSON.stringify(selectedKeys));
+        }
+
+        function submitPartial(){
+            if(selectedKeys == null || selectedKeys.length == 0) {
+                window.alert("No Items have been selected to Submit to Billing");
+                return;
+            }
+            var result = doPartialBilling(JSON.stringify(selectedKeys));
+        }
+
+        function submitAdjustment(){
+            if(selectedKeys == null || selectedKeys.length == 0) {
+                window.alert("No Items have been selected to Submit for Qty Adjustment");
+                return;
+            }
+            if(informationEdited) {
+               window.alert("Values have changed.  Save desired changes before Submitting.");
+               informationEdited = false;
+               return;
+            }
+            doQtyAdjust(JSON.stringify(selectedKeys));
+        }
+
+        var initializeComponent = function() {
+           j$("#massUpdatePopup").dialog({ autoOpen: false, modal: true, position: 'center', width:'600', height:'550'  });
+           j$("#massUpdatePopup").removeClass("hidden");
+        };
+
+        function showSetFields(name){
+            selectedKeys = j$.map(selectedNodes, function(node){if(node.title != null && node.title != ""){return node.key;}});
+            if(selectedKeys.length > 0){
+                j$("#massUpdatePopup").dialog("open");
+                j$("#massUpdatePopup").dialog("option", "title", name);
+                j$("#massUpdatePopup").dialog('option', 'position', 'center');
+                j$("#massUpdatePopup").dialog('option', 'closeOnEscape', true);
+            } else {
+                alert("Please select at least one Item");
+            }
+            return false;
+        }
+
+        var afterComplete = function () {
+            hidePopup();
+            return true;
+        }
+
+        var hidePopup = function(){
+            j$("#massUpdatePopup").dialog("close");
+        }
+
+        var saveSelectedFields = function() {
+
+            try {
+                saveFieldsandExit( JSON.stringify(selectedKeys),
+                j$("[id*='massinput1'] option:selected").val(),
+                j$("[id*='massinput2']").val(),
+                j$("[id*='massinput3'] option:selected").val(),
+                j$("[id*='massinput4'] option:selected").val(),
+                j$("[id*='massinput5'] option:selected").val(),
+                j$("[id*='massinput6']").val(),
+                (j$("[id*='massinput7']").attr("checked") ? "true" : "false")
+                );
+            } catch (err) {
+                alert(err);
+            }
+
+        };
+
+        function deleteItems(){
+            if(selectedKeys == null || selectedKeys.length == 0) {
+                window.alert("No Items have been selected to delete");
+                return;
+            }
+            doDeleteItems(JSON.stringify(selectedKeys));
+        }
+
+        function saveItems(){
+            doSaveItems(JSON.stringify(editedAssociatedItems));
+            informationEdited = false;
+        }
+
+        function saveCompleted() {
+            window.alert("Save Successful");  //added as part of BUG-00253 jjohnson09182014
+            informationEdited = false;
+        }
+
+        function returnToWorkOrder(){
+            doReturnToWorkOrder();
+        }
+
+   </script>
+
+    <apex:form id="pageForm">
+
+        <apex:actionRegion >
+            <apex:actionFunction name="doCloneItems" action="{!cloneAssociatedItems}" reRender="redirectPanel,pageMessages">
+                <apex:param name="selectedAssocItemIDs" value=""/>
+            </apex:actionFunction>
+
+            <apex:actionFunction name="doPartialBilling" action="{!submitWorkOrder}" reRender="redirectPanel,pageMessages">
+                <apex:param name="selectedAssocItemIDs" value=""/>
+            </apex:actionFunction>
+
+            <apex:actionFunction name="doQtyAdjust" action="{!submitQtyAdjust}" reRender="redirectPanel,pageMessages">
+                <apex:param name="selectedAssocItemIDs" value=""/>
+            </apex:actionFunction>
+
+            <apex:actionFunction name="doDeleteItems" action="{!deleteAssociatedItems}" reRender="redirectPanel,pageMessages">
+                <apex:param name="selectedAssocItemIDs" value=""/>
+            </apex:actionFunction>
+
+            <apex:actionFunction name="doReturnToWorkOrder" action="{!returnWorkOrder}" immediate="true" reRender="">
+            </apex:actionFunction>
+
+            <apex:actionFunction name="doSaveItems" action="{!saveAssociatedItems}" immediate="true" oncomplete="saveCompleted();" reRender="redirectPanel,pageMessages">
+                <apex:param name="editedData" value=""/>
+            </apex:actionFunction>
+        </apex:actionRegion>
+
+        <apex:outputpanel id="workOrderItemHierarchy" layout="inline">
+            <apex:pageBlock id="workOrderItemPageBlock" mode="maindetail">
+                <apex:pageMessages id="pageMessages" showDetail="true" escape="false" />
+                <apex:pageBlockButtons location="top" dir="LTR">
+                    <apex:outputPanel id="displayButtons" layout="block" rendered="{!!editMode}">
+                        <apex:commandButton onclick="window.open('/apex/WorkOrderItemHierarchy?Id={!workOrder.Id}&saveURL=%2F{!workOrder.Id}&retURL=%2F{!workOrder.Id}&mode=edit','_top')" value="Edit Items" immediate="true" rerender="blank"/>
+                    </apex:outputPanel>
+                    <apex:outputPanel id="editButtons" layout="block" rendered="{!editMode}">
+                        <apex:commandButton onclick="saveItems();return false;" value="Save Items" />
+                        <apex:commandbutton rendered="{!!isPortalUser}" onclick="return showSetFields('');" value="Update Fields" />
+                        <apex:commandButton rendered="{!!isQtyAdjustWorkOrder}" onclick="submitPartial();return false;" value="Submit Items for Billing" />
+                        <apex:commandButton rendered="{!isQtyAdjustWorkOrder}" onclick="submitAdjustment();return false;" value="Submit Items for Qty Adjustment" />
+                        <apex:commandButton onclick="returnToWorkOrder();return false;" value="Return to Work Order"/>
+                        <apex:commandButton rendered="{!!isPortalUser}" onclick="window.open('/apex/woOrderItemSelection?Id={!workOrder.Id}&saveURL=%2F{!workOrder.Id}&retURL=%2F{!workOrder.Id}','_top')" value="Add Order Items" immediate="true" rerender="blank"/>
+                        <apex:commandButton rendered="{!!isPortalUser}" onclick="deleteItems();return false;" value="Delete Items" />
+                        <apex:commandButton rendered="{!!isPortalUser}" onclick="cloneItems();return false;" value="Clone Items"/>
+                    </apex:outputPanel>
+                </apex:pageBlockButtons>
+                <apex:outputPanel id="redirectPanel" layout="block">
+                    <apex:outputText rendered="{!shouldRedirect}">
+                        <script type="text/javascript">
+                            if('{!alertMessage}'!=""){
+                                window.alert('{!alertMessage}');
+                            }
+                            window.top.location.href = '{!redirectUrl}';
+                        </script>
+                    </apex:outputText>
+                </apex:outputPanel>
+                <table id="treetable">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </apex:pageBlock>
+        </apex:outputpanel>
+        <div id="massUpdatePopup" class="hidden">
+            <apex:pageBlock >
+                <div style="overflow:auto;overflow-y: scroll;height:450px;" >
+                    <apex:pageBlockSection title="Fields to Update" columns="1" collapsible="false">
+                            <apex:inputField id="massinput1" value="{!ai.Status__c}"/><br/>
+                            <apex:inputField id="massinput2" value="{!ai.Quantity__c}"/><br/>
+                            <apex:pageBlockSectionItem >
+                                <apex:outputLabel value="Billing Commencement Date" for="massinput6"/>     
+                                <apex:outputPanel >                       
+                                    <apex:inputField id="massinput6" value="{!ai.Billing_Commencement_Date__c}"/>   
+                                    <apex:inputCheckbox id="massinput7" label="Mark Date as Blank"/>
+                                    <apex:outputLabel value="Mark Date as Blank" for="massinput7"/> 
+                                </apex:outputPanel>                         
+                            </apex:pageBlockSectionItem><br/>
+                            <apex:inputField id="massinput3" value="{!ai.Quarter_Assigned_To__c}"/><br/>
+                            <apex:inputField id="massinput4" value="{!ai.Month_Cha__c}"/><br/>
+                            <apex:inputField id="massinput5" value="{!ai.Year_Charged_To__c}"/><br/>
+
+                    </apex:pageBlockSection>
+                </div>
+                <apex:actionStatus id="mySearchStatus1" >
+                    <apex:facet name="stop">
+                        <apex:commandButton style="float:right;" value="Finalize" onclick="saveSelectedFields();" oncomplete="afterComplete();" rerender="redirectPanel, pageMessages" status="mySearchStatus1"/>
+                    </apex:facet>
+                    <apex:facet name="start">
+                         <apex:outputPanel >
+                               <apex:commandButton style="float:right;" value="Processing..." status="mySearchStatus1" disabled="true"/>
+                               <apex:image value="/img/loading32.gif" style="float:right;height: 15px;"/>
+                         </apex:outputPanel>
+                    </apex:facet>
+                </apex:actionStatus>
+                <apex:actionFunction name="saveFieldsandExit" action="{!massUpdateFields}" oncomplete="afterComplete();" rerender="redirectPanel, pageMessages">
+                       <apex:param name="selectedKeys" value="" />
+                       <apex:param name="selectedStatus" value=""/>
+                       <apex:param name="selectedQuantity" value="" />
+                       <apex:param name="selectedQuarterCharged" value="" />
+                       <apex:param name="selectedMonthCharged" value="" />
+                       <apex:param name="selectedYearCharged" value="" />
+                       <apex:param name="selectedBCD" value="" />
+                       <apex:param name="blankBCD" value=""/>
+                </apex:actionFunction>
+
+            </apex:pageBlock>
+        </div>
+    </apex:form>
+    <script>
+        setFocus = function() { return; }
+    </script>
+</apex:page>

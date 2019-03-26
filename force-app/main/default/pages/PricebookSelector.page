@@ -1,0 +1,181 @@
+<apex:page standardController="Account" showHeader="false" sidebar="false" extensions="PriceBookSelectorExtension" >
+	
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js" ></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js" ></script>
+    
+	<apex:stylesheet value="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.0/themes/smoothness/jquery-ui.css" />  
+	<link href="{!URLFOR($Resource.CustomResources, 'fancytree/src/skin-lion/ui.fancytree.css')}" rel="stylesheet" type="text/css"></link>
+    
+    <style>
+    	body {
+    		background: #f8f8f8;
+    	}
+    	
+    	#main-content {
+    		width: 925px;
+    		background: transparent;
+    	}
+    	
+    	#header-block {
+    		background: transparent;
+    		margin: 25px 30px;
+    	}
+    	
+    	#header-block h1 {
+    		font-size: 2em;
+    		font-weight: normal;
+    	}
+    	
+    	#header-block p {
+    		line-height: 1.5em;
+    	}
+    	
+    	#footer-block {
+    		background: transparent;
+    		margin: 25px 25px;
+    	}
+    	
+    	#save-entitlement {
+    		float: right;
+    		padding: 10px;
+    		border: 1px solid lightgray;
+    	}
+    	
+    	#entitlement-block {
+    		background: white;
+			border: 1px solid lightgray;
+			border-radius: 3px;
+			margin: 25px;
+    	}
+    
+    	.entitlement-option {
+			padding: 10px;
+			margin: 5px;
+    	}
+    	
+    	.entitlement-option:hover {
+			background: #F39814;
+    	}
+    	
+    	.selected {
+			background: #FECA40;
+    	}
+    </style>
+    
+    <script type="text/javascript">
+    	j$ = jQuery.noConflict();
+    	
+    	j$(document).ready(function() {
+			initializeComponent();
+			j$(".entitlement-option:eq(0)").click();
+		});
+		
+		/* Initialze UI Components (MUST be called with any new page load)  */
+		var initializeComponent = function() {
+			j$("#popup").dialog({ autoOpen: true, modal: true, position: 'top', width:'600', height:'400'  });
+			
+			j$(".entitlement-option").click(function() {
+				j$(".entitlement-option").removeClass("selected").find("input").prop("checked", false);
+				j$(this).addClass("selected").children("input:eq(0)").prop("checked", true);
+			});
+			
+			j$("#save-entitlement").click(function() {
+				saveSelectedEntitlement();
+			});
+		};
+		
+		var saveSelectedEntitlement = function() {
+			
+			var priceId = j$(".entitlement-option.selected").data("id");
+
+			if (priceId == null || priceId == "") {
+				alert("No pricebook was selected.\n\nPlease select a pricebook and retry.");
+				return;
+			}
+			
+			try {
+	             var j$submit = j$("#save-entitlement");
+					j$submit.val("Processing...");
+					disableButtons(j$submit);
+				saveAndExit( priceId);
+				//closeWindow();
+			} catch (err) {
+				alert(err);
+			}
+		};
+		
+    	function closeWindow(){
+    		// redirect to the page
+			window.opener.location.href= "https://" + window.location.hostname + "/" +  "{!acc.id}";
+			
+			//close pop up window
+			self.close();
+    		
+		};
+		var enableButtons = function (btns, enable) {
+			btns = btns.jquery ? btns : j$(btns);
+			enable = (typeof enable !== 'undefined') ? enable : true;
+			btns.prop('disabled', !enable)
+				.toggleClass('btnDisabled', !enable);
+			return btns;
+		};
+		
+		var disableButtons = function (btns, replaceVal) {
+			btns = enableButtons(btns, false);
+			if (replaceVal) {
+				btns.val(replaceVal);
+			}
+			return btns;
+		};
+		
+		var afterComplete = function () {
+			var j$submit = j$("#save-entitlement");
+			enableButtons(j$submit);
+			j$submit.val('Finalize');
+			hidePopup();
+			return true;
+		}
+			
+		var hidePopup = function(){
+			j$("#popup").dialog("close");
+		}
+    </script>
+	<div id="popup">
+	<apex:pageBlock >
+		<apex:pageMessages id="pageMessages" />
+		<apex:form >
+			
+			<apex:pageBlockSection columns="1">
+				<div id="entitlement-block">
+					<apex:repeat value="{!priceList}" var="e"> 
+						<div class="entitlement-option"  data-id="{!id2Custom[e].priceId}" data-key="{!id2Custom[e].priceId}" data-name="{!id2Custom[e].name}">
+							<input type="radio" value="{!id2Custom[e].priceId}">
+								<b>{!id2Custom[e].name}</b> 
+							</input> 
+						</div>
+					</apex:repeat>
+					
+				</div>
+				<!-- <apex:commandButton value="Save and Exit" action="{!selectPrice}" oncomplete="closeWindow()" /> redirectPanel,-->
+				<button class="btn" id="save-entitlement" >Save and Exit</button>
+				<apex:actionFunction name="saveAndExit" action="{!selectPrice}" oncomplete="afterComplete();" rerender=" redirectPanel,pageMessages" >
+	                   <apex:param name="priceId" value="" />
+	            </apex:actionFunction> 
+			</apex:pageBlockSection>
+			
+			<apex:outputPanel id="redirectPanel" >
+   				<apex:outputText rendered="{!shouldRedirect}">
+       				<script type="text/javascript">
+           				// redirect to the page
+						window.opener.location.href= "https://" + window.location.hostname + "{!redirectUrl}";
+						
+						//close pop up window
+						window.close();
+       				</script>
+   				</apex:outputText> 
+			</apex:outputPanel>
+		</apex:form>
+		
+	</apex:pageBlock>
+	</div>
+</apex:page>

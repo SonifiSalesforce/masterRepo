@@ -1,0 +1,57 @@
+<apex:page standardController="Account" extensions="AccountSitePhotoController">
+    <apex:form >        
+        <apex:pageBlock mode="maindetail" >
+            <apex:pageMessages showDetail="true" escape="false" />
+            <apex:pageBlockButtons >
+                <apex:commandButton value="New Site Photo" onclick="newPhoto();"/>
+            </apex:pageBlockButtons>                    
+            <apex:pageBlockTable value="{!photos}" var="photo" rendered="{!photos.size>0}">
+                <apex:column width="25%" headerValue="Site Photo Name" >
+                    <apex:outputText value="{!photo.Name}"/>
+                </apex:column>
+                <apex:column headerValue="Image"> 
+                    <apex:outputLink value="{!photo.downloadUrl}" target="_top" >
+                      <apex:image style="margin:4px" url="{!photo.imageUrl}" />
+                    </apex:outputLink>
+                </apex:column>
+        		<apex:column headerValue="Description">
+        			<apex:outputText value="{!photo.description}"/> 
+        		</apex:column>
+                <apex:column headerValue="Photo Group">
+                    <apex:outputText value="{!photo.PhotoGroup}"/>
+                </apex:column>
+                <apex:column headerValue="Photo Type">
+                    <apex:outputText value="{!photo.Type}"/>
+                </apex:column>
+                <apex:column headerValue="Edit Site Photo">
+                    <apex:commandButton value="Edit Site Photo" onclick="editPhoto('{!photo.spId}');"/>
+                </apex:column>
+            </apex:pageBlockTable>
+        </apex:pageBlock>
+    </apex:form>
+    <script> 
+    function newPhoto()
+    {
+        pathArray = window.location.href.split( '/' );
+        host = pathArray[3];
+        if(host == "sonifipartners" ){
+            parent.location.href = '/sonifipartners/apex/SitePhotoCreation?id={!acId}&object=ac&type=new&retURL=%2F{!acid}';
+        }
+        else {
+            parent.location.href = '/apex/SitePhotoCreation?id={!acId}&object=ac&type=new&retURL=%2F{!acid}';
+        }
+    }
+    function editPhoto(photoId)
+    {
+        pathArray = window.location.href.split( '/' );
+        host = pathArray[3];
+        if(host == "sonifipartners" ){
+            parent.location.href = '/sonifipartners/apex/SitePhotoCreation?id={!acId}&object=ac&type=edit&retURL=%2F{!acid}&spId='+photoId;
+        }
+        else {
+            parent.location.href = '/apex/SitePhotoCreation?id={!acId}&object=ac&type=edit&retURL=%2F{!acid}&spId='+photoId;
+        }
+    }
+    </script>
+
+</apex:page>

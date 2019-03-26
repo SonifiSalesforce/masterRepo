@@ -1,0 +1,435 @@
+<apex:page standardcontroller="Account"
+    extensions="AccountAssetHierarchyExtension" cache="false">
+    <apex:include pageName="GetUIThemeContext" />
+    <!--jjackson 2/18 added this to expose js functions that return user ui context (lightning or classic)-->
+    <script type="text/javascript" src="/soap/ajax/36.0/connection.js"></script>
+    <script type="text/javascript"
+        src="/support/console/36.0/integration.js"></script>
+    <script type="text/javascript"
+        src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <!--jjackson updated version from 1.8.3 to 3.3.1 Feb 18-->
+    <script type="text/javascript"
+        src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <!--jjackson updated version from 1.9.2 to 1.12.1 Feb 18-->
+    <script
+        src="{!URLFOR($Resource.CustomResources, 'fancytree/src/jquery.fancytree.js')}"
+        type="text/javascript"></script>
+    <script
+        src="{!URLFOR($Resource.CustomResources, 'fancytree/src/jquery.fancytree.table.js')}"
+        type="text/javascript"></script>
+    <link
+        href="{!URLFOR($Resource.CustomResources, 'fancytree/src/skin-lion/ui.fancytree.css')}"
+        rel="stylesheet" type="text/css" />
+    <apex:stylesheet value="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.0/themes/smoothness/jquery-ui.css" />
+    <style type="text/css">
+#treetable {
+    width: 100%;
+}
+
+table.fancytree-ext-table tbody tr:nth-child(even) {
+    background-color: #f4f4f8;
+}
+
+td.productFamilyColumnHeader {
+    text-align: center;
+    font-weight: bold;
+}
+
+td.packageFamilyColumnHeader {
+    text-align: center;
+    font-weight: bold;
+    color: #0093D0;
+}
+
+td.productFamily {
+    text-align: center;
+}
+
+td.packageFamily {
+    text-align: center;
+    color: #0093D0;
+}
+
+.contract-option {
+    padding: 10px;
+    margin: 5px;
+}
+
+.contract-option:hover {
+    background: #F39814;
+}
+
+.selected {
+    background: #FECA40;
+}
+
+#save-contract {
+    float: right;
+    padding: 10px;
+    border: 1px solid lightgray;
+}
+
+#contract-block {
+    
+}
+</style>
+
+    <script type="text/javascript">
+            j$ = jQuery.noConflict();
+
+      document.addEventListener('DOMContentLoaded', function(event) 
+      { document.getElementById('isLightningExperienceJS').innerHTML = ForceUI.isLightningExperience(); });
+
+            
+            var selectedKeys = [];
+            var selectedNodes = [];
+            var urlPrefix = '{!$Site.Prefix}';
+            var AcctId = '{!Account.Id}';
+            var inLightning = ForceUI.isLightningExperience();
+            //alert(inLightning); 
+            
+            j$(function(){
+                // Attach the fancytree widget to an existing <div id="tree"> element
+                // and pass the tree options as an argument to the fancytree() function:
+                j$("#treetable").fancytree({
+                    extensions: ["table"],
+                    checkbox: true,
+                    selectMode: 3, // 1:single, 2:multi, 3:multi-hier
+                    debugLevel: 3,
+                    table: {
+                        indentation: 20,      // indent 20px per node level
+                    },
+                    source: {!treeJSON},
+                    select: function(event, data) {
+                        selectedNodes = data.tree.getSelectedNodes();
+                        data.tree.rootNode.visit(function(node){
+                            if(node.partsel && !node.selected) {
+                                selectedNodes.push(node);
+                            }
+                        });
+                    },
+                    rendercolumns: function(e, data) {
+                        var node = data.node;
+                        j$tdList = j$(node.tr).find(">td");
+                        if(node.data.productFamily==true) {
+                            j$(node.tr).attr('data-productFamily', node.data.productFamily);
+                        } else {
+                            j$(node.tr).attr('data-productFamily', 'false');
+                        }
+                        if(node.data.productFamilyColumnHeader==true) {
+                            j$tdList.eq(1).text(node.data.columnHeader1).addClass("productFamilyColumnHeader");
+                            j$tdList.eq(2).text(node.data.columnHeader2).addClass("productFamilyColumnHeader");
+                            j$tdList.eq(3).text(node.data.columnHeader3).addClass("productFamilyColumnHeader");
+                            j$tdList.eq(4).text(node.data.columnHeader4).addClass("productFamilyColumnHeader");
+                            j$tdList.eq(5).text(node.data.columnHeader5).addClass("productFamilyColumnHeader");
+                            j$tdList.eq(6).text(node.data.columnHeader6).addClass("productFamilyColumnHeader");
+                            j$tdList.eq(7).text(node.data.columnHeader7).addClass("productFamilyColumnHeader");
+                            j$tdList.eq(8).text(node.data.columnHeader8).addClass("productFamilyColumnHeader");
+                            j$tdList.eq(9).text(node.data.columnHeader9).addClass("productFamilyColumnHeader");
+                            j$tdList.eq(10).text(node.data.columnHeader10).addClass("productFamilyColumnHeader");
+                        } else if(node.data.packageColumnHeader==true) {
+                            j$tdList.eq(1).text(node.data.columnHeader1).addClass("packageFamilyColumnHeader");
+                            j$tdList.eq(2).text(node.data.columnHeader2).addClass("packageFamilyColumnHeader");
+                            j$tdList.eq(3).text(node.data.columnHeader3).addClass("packageFamilyColumnHeader");
+                            j$tdList.eq(4).text(node.data.columnHeader4).addClass("packageFamilyColumnHeader");
+                            j$tdList.eq(5).text(node.data.columnHeader5).addClass("packageFamilyColumnHeader");
+                            j$tdList.eq(6).text(node.data.columnHeader6).addClass("packageFamilyColumnHeader");
+                            j$tdList.eq(7).text(node.data.columnHeader7).addClass("packageFamilyColumnHeader");
+                            j$tdList.eq(8).text(node.data.columnHeader8).addClass("packageFamilyColumnHeader");
+                            j$tdList.eq(9).text(node.data.columnHeader9).addClass("packageFamilyColumnHeader");
+                            j$tdList.eq(10).text(node.data.columnHeader10).addClass("packageFamilyColumnHeader");
+                            j$tdList.eq(11).text(node.data.columnHeader11).addClass("packageFamilyColumnHeader");
+                        } else if(node.data.productFamily==true) {
+                            j$tdList.eq(1).text(node.data.status).addClass("productFamily");
+                            j$tdList.eq(2).text(node.data.termStart).addClass("productFamily");
+                            j$tdList.eq(3).text(node.data.termEnd).addClass("productFamily");
+                            j$tdList.eq(4).text(node.data.systemStatus).addClass("productFamily");
+                            if(node.data.autoRenew==true)
+                                j$tdList.eq(5).html("<span><img src={!URLFOR($Resource.CustomResources, 'images/ResourceSucceeded.png')}></span>").addClass("productFamily");
+                            else 
+                                j$tdList.eq(5).html("<span><img src={!URLFOR($Resource.CustomResources, 'images/ResourceFailed.png')}></span>").addClass("productFamily");
+                            j$tdList.eq(6).text(node.data.platform).addClass("productFamily");
+                            j$tdList.eq(7).text(node.data.renewalTerm).addClass("productFamily");
+                            j$tdList.eq(8).text(node.data.renewalCycle).addClass("productFamily");
+                        } else {
+                            j$tdList.eq(1).text(node.data.status).addClass("packageFamily");
+                            j$tdList.eq(2).text(node.data.serviceStart).addClass("packageFamily");
+                            j$tdList.eq(3).text(node.data.serviceEnd).addClass("packageFamily");
+                            j$tdList.eq(4).text(node.data.cancelDate).addClass("packageFamily");
+                            j$tdList.eq(5).text(node.data.quantity).addClass("packageFamily");  <!--Billing Qty-->
+                            
+                            j$tdList.eq(6).text(node.data.receiverAddress).addClass("packageFamily");<!--Receiver Id-->
+                            j$tdList.eq(7).text(node.data.dTVAccountNumber).addClass("packageFamily");<!--DTV Account #-->
+                            j$tdList.eq(8).text(node.data.serialNumber).addClass("packageFamily");
+                            j$tdList.eq(9).text(node.data.systemID).addClass("packageFamily");     <!--Access Card Id-->
+                        //  j$tdList.eq(6).text(node.data.deliveryMethod).addClass("packageFamily"); -->    
+                        //     j$tdList.eq(11).text(node.data.feeSchedule).addClass("packageFamily"); don't need this column -->
+                        }
+                    }
+                });
+                
+                j$("#treetable").delegate("span[class='fancytree-title']", "click", function(event){
+                    event.stopPropagation();  // prevent fancytree activate for this row
+                    var node = j$.ui.fancytree.getNode(event);
+                    // Use <a> href and target attributes to load the content:
+                    if( node.data.href ){
+                        navigateTo(node.data.href, node.data.target);
+                    }
+                });  
+                
+            });
+            
+            j$(document).ready(function() {
+                initializeComponent();
+                j$(".contract-option:eq(0)").click();
+            });
+        
+            /* Initialze UI Components (MUST be called with any new page load)  */
+            var initializeComponent = function() {              
+                j$("#popup").dialog({ autoOpen: false, modal: true, position: 'center', width:'600', height:'350'  });
+                j$("#statuspopup").dialog({ autoOpen: false, modal: true, position: 'center', width:'600', height:'350'  });                
+                j$(".contract-option").click(function() {
+                j$(".contract-option").removeClass("selected").find("input").prop("checked", false);
+                j$(this).addClass("selected").children("input:eq(0)").prop("checked", true);
+            });
+                
+                j$("#save-contract").click(function() {
+                    saveSelectedContract();
+                });             
+            }; 
+        
+            var saveSelectedContract = function() {
+                var contractId = j$(".contract-option.selected").data("id");
+                var contractKey = j$(".contract-option.selected").data("key");
+                if (contractKey == null || contractKey == "") {
+                    alert("No contract selected.\n\nPlease select a contract and retry.");
+                    return;
+                }
+                
+                try {                   
+                    saveAndExit( JSON.stringify(selectedKeys), contractId);
+                } catch (err) {
+                    alert(err);
+                }
+            };
+
+            var saveSelectedStatus = function() {
+                try {                   
+                    saveStatusandExit( JSON.stringify(selectedKeys), j$("[id*='assetStatusSelect'] option:selected").val(),j$("[id*='massinput1']").val(),j$("[id*='massinput2']").val());
+                } catch (err) {
+                    alert(err);
+                }
+            };
+              
+
+            function showDialog(name){
+                selectedKeys = j$.map(selectedNodes, function(node){if(node.title != null && node.title != ""){return node.key;}});
+                if(selectedKeys.length > 0){
+                    j$("#popup").dialog("open");
+                    j$("#popup").dialog("option", "title", name);
+                    j$("#popup").dialog('option', 'position', 'center');
+                    j$("#popup").dialog('option', 'closeOnEscape', true);
+                } else {
+                    alert("Please select at least one product inventory item");
+                }
+                return false;
+            }
+            
+            function showSetStatus(name){
+                selectedKeys = j$.map(selectedNodes, function(node){if(node.title != null && node.title != ""){return node.key;}});
+                if(selectedKeys.length > 0){
+                    j$("#statuspopup").dialog("open");
+                    j$("#statuspopup").dialog("option", "title", name);
+                    j$("#statuspopup").dialog('option', 'position', 'center');
+                    j$("#statuspopup").dialog('option', 'closeOnEscape', true);
+                } else {
+                    alert("Please select at least one product inventory item");
+                }
+                return false;           
+            }
+            
+            var afterComplete = function () {
+                hidePopup();
+                return false;
+            }
+
+                
+            var hidePopup = function(){
+                j$("#popup").dialog("close");
+                j$("#statuspopup").dialog("close");
+            }
+            
+            /* Navigate to a specified Url in either the standard or service cloud console 
+             jjackson 2/18 for lightning transition, must check whether user context is lightning or classic.
+             window.open will not work in salesforce lightning.  Must use sforce.one method instead. */
+            var navigateTo = function(urlString, target) {
+                
+                // Check for service cloud console
+                try {
+                    if (sforce.console.isInConsole()) {
+                        // Get the enclosing primary tab id.
+                        sforce.console.getEnclosingPrimaryTabId(function(result) {
+                            // Use the results primary tab id and open a new subtab
+                            sforce.console.openSubtab(result.id,urlString, true); 
+                        });
+                        return false;
+                    }
+                } catch (err) {}
+               
+                if (urlPrefix != null && urlPrefix != '')
+                { urlString = urlPrefix + '/' + urlString; }
+                //alert(urlString);
+                
+               if(inLightning == false)
+               {
+                 window.open(urlString, target);   
+               }
+               else
+               { sforce.one.navigateToURL(urlString);  }
+            }; 
+            
+            function setFocusOnLoad() {}
+              
+        </script>
+
+    <apex:form >
+
+        <div id="assetHierarchy">
+            <apex:pageBlock mode="maindetail">
+                <apex:pageMessages id="pagemessages" showDetail="true"
+                    escape="false" />
+                <apex:pageBlockButtons location="top">
+                    <apex:commandButton onclick="return showDialog('')"
+                        value="Create Subscription Items"
+                        rendered="{!showAddContractLineItems}" />
+                    <apex:commandButton onclick="return showSetStatus('')"
+                        value="Mass Update Product Inventory"
+                        rendered="{!showAddContractLineItems}"
+                        reRender="redirectPanel,pageMessages" />
+                </apex:pageBlockButtons>
+                <apex:outputPanel id="redirectPanel">
+                    <apex:outputText rendered="{!shouldRedirect}">
+                        <script type="text/javascript">
+                            if(inLightning == false)
+                            {    window.top.location.href = '{!redirectUrl}'; }
+                            else
+                            {   sforce.one.navigateToSObject(AcctId);  }
+                            </script>
+                    </apex:outputText>
+                </apex:outputPanel>
+                <table id="treetable">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </apex:pageBlock>
+        </div>
+        <div id="popup">
+            <apex:pageBlock >
+                <div style="overflow: auto; overflow-y: scroll; height: 250px;">
+                    <apex:pageBlockSection title="Select Contract" columns="1"
+                        collapsible="false">
+                        <div id="contract-block">
+                            <apex:repeat value="{!contractList}" var="e">
+                                <div class="contract-option"
+                                    data-id="{!contractMap[e].contractId}"
+                                    data-key="{!contractMap[e].key}"
+                                    data-name="{!contractMap[e].name}">
+                                    <input type="radio" value="{!contractMap[e].key}" /> <b>{!contractMap[e].name}</b>
+                                    <!--jjackson removed the input end tag from here -->
+                                </div>
+                            </apex:repeat>
+                        </div>
+                    </apex:pageBlockSection>
+                </div>
+                <apex:actionStatus id="ContractProcessingStatus">
+                    <apex:facet name="stop">
+                        <apex:commandButton style="float:right;"
+                            value="Add Subscription Items" onclick="saveSelectedContract();"
+                            status="ContractProcessingStatus" />
+                    </apex:facet>
+                    <apex:facet name="start">
+                        <apex:outputPanel >
+                            <apex:commandButton style="float:right;" value="Processing..."
+                                status="ContractProcessingStatus" disabled="true" />
+                            <apex:image value="/img/loading32.gif"
+                                style="float:right;height: 15px;" />
+                        </apex:outputPanel>
+                    </apex:facet>
+                </apex:actionStatus>
+                <apex:actionFunction name="saveAndExit" action="{!saveTasks}"
+                    oncomplete="afterComplete();"
+                    rerender="redirectPanel, pagemessages">
+                    <apex:param name="selectedKeys" value="" />
+                    <apex:param name="contractId" value="" />
+                </apex:actionFunction>
+            </apex:pageBlock>
+        </div>
+        <div id="statuspopup">
+            <apex:pageBlock >
+                <div style="overflow: auto; overflow-y: scroll; height: 250px;">
+                    <apex:pageBlockSection title="Fields to Update" columns="1"
+                        collapsible="false">
+                        <apex:selectList id="assetStatusSelect" value="{!a.Status}"
+                            size="1">
+                            <apex:selectOptions value="{!assetStatusValues}" />
+                        </apex:selectList>
+                        <apex:inputField id="massinput1" value="{!a.Billing_Quantity__c}" />
+                        <br />
+                        <apex:inputField id="massinput2" value="{!a.Cancellation_Date__c}" />
+                    </apex:pageBlockSection>
+                </div>
+                <apex:actionStatus id="FieldUpdateStatus">
+                    <apex:facet name="stop">
+                        <apex:commandButton style="float:right;" value="Update"
+                            onclick="saveSelectedStatus();" status="FieldUpdateStatus" />
+                    </apex:facet>
+                    <apex:facet name="start">
+                        <apex:outputPanel >
+                            <apex:commandButton style="float:right;" value="Processing..."
+                                status="FieldUpdateStatus" disabled="true" />
+                            <apex:image value="/img/loading32.gif"
+                                style="float:right;height: 15px;" />
+                        </apex:outputPanel>
+                    </apex:facet>
+                </apex:actionStatus>
+                <apex:actionFunction name="saveStatusandExit"
+                    action="{!setAssetStatus}" oncomplete="afterComplete();"
+                    rerender="redirectPanel, pagemessages">
+                    <apex:param name="selectedKeys" value="" />
+                    <apex:param name="selectedStatus" value="" />
+                    <apex:param name="massupdate1" value="" />
+                    <apex:param name="massupdate2" value="" />
+                </apex:actionFunction>
+            </apex:pageBlock>
+        </div>
+
+    </apex:form>
+</apex:page>

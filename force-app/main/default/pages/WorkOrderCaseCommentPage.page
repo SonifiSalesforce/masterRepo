@@ -1,0 +1,25 @@
+<apex:page standardcontroller="Case"
+         extensions="CaseCommentExtension" showHeader="false">
+      <!-- Uses publisher.js rather than interaction.js -->
+   <apex:includeScript value="/canvas/sdk/js/28.0/publisher.js"/>
+   <div>
+        <apex:form >
+         <apex:pageBlock >
+          <apex:pageBlockSection >
+            <!-- Creates a case comment and on complete notifies the Case Feed page
+                that a related list and the feed have been updated -->
+            <apex:actionFunction action="{!addComment}" name="addComment" rerender="out" />
+            <apex:outputPanel id="out" >
+                <apex:inputField value="{!comment.commentbody}" style="width:125%;
+                height:200px;" />
+            </apex:outputPanel>
+              <apex:inputfield value="{!comment.ispublished}"  label="Public"/>
+           </apex:pageBlockSection>
+          </apex:pageBlock>
+        </apex:form><br />
+        <button type="button" onclick="addComment();" style="position:fixed; bottom:20px;
+        right:2px; padding: 5px 10px; font-size:13px;" id="cpbutton" >Add Case Comment
+        </button>
+    </div>             
+  
+</apex:page>

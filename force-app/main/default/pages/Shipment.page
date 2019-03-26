@@ -1,0 +1,108 @@
+<apex:page standardController="Shipment__c" extensions="ShipmentExtension">
+
+	<script type="text/javascript">
+
+	</script>
+
+	<apex:form onkeypress="return event.keyCode != 13;">
+		 <apex:pageBlock title="Selected Items">
+			<apex:pageMessages id="pageMessages" />
+			<apex:pageBlockButtons >
+				<apex:commandButton style="display:none" value="" action="{!loadOrderItems}" />
+				<apex:commandButton value="Save" action="{!saveShipmentItem}" />
+				<apex:commandButton value="Cancel" action="{!cancel}" />
+			</apex:pageBlockButtons>
+			<apex:pageBlockSection title="Shipment">
+				<apex:outputField value="{!ship.Name}" />
+				<apex:outputField value="{!ship.Work_Order__c}" />
+			</apex:pageBlockSection>
+			<div id="cart">
+				<apex:pageBlockTable value="{!selectedOrders}" var="sItem" id="cartTable">
+					<apex:column >
+						<apex:commandLink value="Remove" action="{!deleteOrderItem}" rerender="cart, cartTable, OrderItemTable, pageMessages">
+							<apex:param assignTo="{!orderItemId}" value="{!sItem.orderItemId}" name="removeId"/>
+						</apex:commandLink>
+					</apex:column>
+					<apex:column headerValue="Product Name">
+						<apex:outputField value="{!sItem.orderItem.Product__c}" />
+					</apex:column>
+					<apex:column headerValue="Order Item Name">
+						<apex:outputField value="{!sItem.shipItem.Order_Item__c}" />
+					</apex:column>
+					<apex:column headerValue="Order Name">
+						<apex:outputField value="{!sItem.orderItem.Order__c}" />
+					</apex:column>
+					<apex:column headerValue="Quantity Remaining parts">
+						<apex:outputText value="{!sItem.orderItem.Remaining_Quantity__c}" />
+					</apex:column>
+					<apex:column headerValue="Quantity">
+						<apex:inputField value="{!sItem.shipItem.Quantity__c}" />
+					</apex:column>
+				</apex:pageBlockTable>
+			</div>
+		</apex:pageBlock>  
+		<apex:actionfunction name="loadtheProducts" action="{!loadOrderItems}"  />
+		<apex:pageBlock id="OrderItems">
+			<apex:pageMessages id="moreMessages"/>
+			<apex:pageBlockSection >
+				<apex:pageBlockSectionItem >
+					<apex:outputPanel >Order Item Name:</apex:outputPanel>
+					<apex:inputText value="{!orderName}" >
+						
+					</apex:inputText>
+				</apex:pageBlockSectionItem>
+				<apex:pageBlockSectionItem >
+					<apex:outputPanel style="">Order:</apex:outputPanel>
+					<apex:selectList value="{!orderNameAndId}" multiselect="false" size="1" >
+						<apex:selectOptions value="{!ordersAndIds}" />
+					</apex:selectList>
+				</apex:pageBlockSectionItem>
+				<apex:actionStatus id="mySearchStatus1" >
+					<apex:facet name="stop">
+						<apex:commandButton id="searchBtn" value="Search" action="{!loadOrderItems}" rerender="OrderItemTable" status="mySearchStatus1" tabIndex="0"  />
+					</apex:facet>
+					<apex:facet name="start">
+			             <apex:outputPanel >
+			             	  <apex:image value="/img/loading32.gif" style="height: 15px;"/>
+			                   <apex:commandButton value="Searching..." status="mySearchStatus1" disabled="true"/>
+			             </apex:outputPanel>
+			        </apex:facet>
+				</apex:actionStatus>
+				<apex:actionStatus id="SelectAllStatus" >
+					<apex:facet name="stop">
+						<apex:commandButton style="float:right;" value="Select All" action="{!addAllItems}" rerender="OrderItemTable,cart, cartTable, moreMessages" status="SelectAllStatus" tabIndex="0"  />
+					</apex:facet>
+					<apex:facet name="start">
+			             <apex:outputPanel >
+			                   <apex:commandButton style="float:right;" value="Processing..." status="SelectAllStatus" disabled="true"/>
+			                   <apex:image value="/img/loading32.gif" style="float:right;height: 15px;"/>
+			             </apex:outputPanel>
+			        </apex:facet>
+				</apex:actionStatus>
+				
+			</apex:pageBlockSection>
+			<apex:pageBlockTable value="{!orders}" var="item" id="OrderItemTable">
+				<apex:column headerValue="Product Name">
+					<apex:outputField value="{!item.orderItem.Product__c}" />
+				</apex:column>
+				<apex:column headerValue="Order Item Name">
+					<apex:outputField value="{!item.shipItem.Order_Item__c}" />
+				</apex:column>
+				<apex:column headerValue="Order Name">
+						<apex:outputField value="{!item.orderItem.Order__c}" />
+					</apex:column>
+				<apex:column headerValue="Quantity">
+					<apex:outputText value="{!item.orderItem.Quantity__c}" />
+				</apex:column>
+				<apex:column headerValue="Remaining Quantity">
+					<apex:outputText value="{!item.orderItem.Remaining_Quantity__c}" />
+				</apex:column>
+				<apex:column >
+					<apex:commandButton value="Select" action="{!addOrderItem}" rerender="moreMessages, OrderItemTable, cart, cartTable">
+						<apex:param assignTo="{!orderItemId}" value="{!item.orderItemId}" name="selectableOrderItem"/>
+					</apex:commandButton>
+				</apex:column>
+			</apex:pageBlockTable>
+		</apex:pageBlock>
+	</apex:form>
+</apex:page>

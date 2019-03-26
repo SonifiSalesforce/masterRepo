@@ -1,0 +1,116 @@
+<apex:page standardController="Work_Order__c" extensions="woOrderItemExtension">
+            <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js" />
+            <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js" />        
+            <style type="text/css">
+                #treetable{
+                    width:100%;
+                }
+                table.fancytree-ext-table tbody tr:nth-child(even){
+                    background-color: #f4f4f8;
+                }
+                .alignCenter {
+                   text-align: center;
+                }
+                .subColor {
+                   color: #1FB25A; 
+                }
+            </style>
+            
+            <link href="{!URLFOR($Resource.CustomResources, 'fancytree/src/skin-lion/ui.fancytree.css')}" rel="stylesheet" type="text/css"></link>
+            <script src="{!URLFOR($Resource.CustomResources, 'fancytree/src/jquery.fancytree.js')}" type="text/javascript"></script>
+            <script src="{!URLFOR($Resource.CustomResources, 'fancytree/src/jquery.fancytree.table.js')}" type="text/javascript"></script>
+            
+            
+            <script type="text/javascript">
+                j$ = jQuery.noConflict();
+                  j$(function(){
+                    j$("#orderItemHierarchy").fancytree({
+                      //extensions: ["table"],
+                      nodeColumnIdx: 1,
+                      selectMode: 3, // 1:single, 2:multi, 3:multi-hier
+                      checkbox: true,
+                      table: {
+                        indentation: 20,      // indent 20px per node level
+                      },
+                      source: {!oiTreeJSON},
+                      
+                      select: function(event, data) {
+                        var selectedNodes = data.tree.getSelectedNodes();
+                        data.tree.rootNode.visit(function(node){
+                            if(node.partsel && !node.selected) {
+                                selectedNodes.push(node);
+                            }
+                        })
+                                   
+                        var selectedKeys = j$.map(selectedNodes, function(node){
+                                return node.key;
+                        });
+                        passSelected(JSON.stringify(selectedKeys));
+
+                      },
+
+                    });
+                      j$("#workOrderHierarchy").delegate("span[class='fancytree-title']", "click", function(event){
+                        event.stopPropagation();  // prevent fancytree activate for this row
+                        var node = j$.ui.fancytree.getNode(event);
+                        // Use <a> href and target attributes to load the content:
+                        if( node.data.href ){
+                            window.open(node.data.href, node.data.target);
+                        }
+                      }); 
+
+                      j$("#orderItemHierarchy").delegate("span[class='fancytree-title']", "click", function(event){
+                        event.stopPropagation();  // prevent fancytree activate for this row
+                        var node = j$.ui.fancytree.getNode(event);
+                        // Use <a> href and target attributes to load the content:
+                        if( node.data.href ){
+                            window.open(node.data.href, node.data.target);
+                        }
+                      }); 
+                      
+                    
+                  });
+                  
+                j$(function(){
+                    j$("#workOrderHierarchy").fancytree({
+                      //extensions: ["table"],
+                      nodeColumnIdx: 1,
+                      selectMode: 2, // 1:single, 2:multi, 3:multi-hier
+                      checkbox: false,
+                      table: {
+                        indentation: 20,      // indent 20px per node level
+                      },
+                      source: {!woTreeJSON},                      
+
+                    });
+                  });
+
+
+
+            </script>
+        <apex:form >
+            <apex:actionFunction name="passSelected" action="{!passSelected}" rerender="">
+                <apex:param name="x" value="x" assignTo="{!selectedIds}" />
+            </apex:actionFunction>
+
+            <div id="oiHierarchy">
+                <apex:pageBlock mode="maindetail">          
+                    <apex:pageBlockButtons location="top">        
+                        <apex:commandButton action="{!transferOrderItems}" value="Transfer Order Items" rendered="{!showOrderSelect}" rerender=""/>
+                        <apex:commandButton action="{!cancelTransfer}" value="Back" />
+                    </apex:pageBlockButtons>
+                     <apex:pageBlockSection columns="1">
+                        <apex:pageMessages Id="pageMessages" showDetail="true" escape="false" />
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection columns="2">
+                        <apex:pageBlockSectionItem rendered="{!showOrderSelect}">
+                            <div id="orderItemHierarchy"/>
+                        </apex:pageBlockSectionItem>
+                        <apex:pageBlockSectionItem rendered="{!showWorkOrder}">
+                            <div id="workOrderHierarchy"/>
+                        </apex:pageBlockSectionItem>
+                    </apex:pageBlockSection>
+                </apex:pageBlock>
+            </div>
+        </apex:form>
+</apex:page>

@@ -1,0 +1,120 @@
+<apex:page controller="ThirdPartyFieldService" >
+   <apex:form >
+    <apex:pageMessages />
+    <apex:pageBlock title="Search Accounts">
+       <h1>
+           If a matching account is found, select it and then choose Third Party Partner below before clicking Create Case. <br/><br/>   
+       </h1>
+       <apex:pageBlockSection columns="1">
+        <apex:InputText value="{!searchname}" label="Name" />
+        <apex:InputText value="{!searchadd}" label="Street Address" />
+        <apex:InputText value="{!searchcity}" label="City" />
+        <apex:InputText value="{!searchstate}" label="State" />
+       </apex:pageBlockSection>
+ 
+      <apex:pageblockTable value="{!lstcheckedaccts}" var="act">
+                <apex:column >
+                    <apex:inputCheckbox value="{!act.selected}" />
+                </apex:column>
+                <apex:column headerValue="Account Name">
+                	<apex:outputLink value="{!URLFOR($Action.Account.View, act.acc.id)}">{!act.acc.name}</apex:outputLink>    
+                </apex:column>
+                <apex:column value="{!act.acc.Physical_Street_Address_Line_1__c}" />
+                <apex:column value="{!act.acc.Physical_City__c}"/>
+                <apex:column value="{!act.acc.Physical_State__c}"/>
+     </apex:pageblockTable> -->
+        <div align="center" draggable="false">
+            <apex:commandButton value="Find Account" action="{!FindRecords}" />
+            <apex:commandButton value="Clear Search" action="{!ClearSearch}" />
+            <apex:commandButton value="Create Case" action="{!CreateCase}" />
+       </div>
+    <apex:pageBlockSection title="Choose Third Party Partner -- Select the partner who initiated this case." collapsible="false" columns="1">
+   		<apex:pageBlockSectionItem >
+        	<apex:outputPanel >
+                <apex:outputLabel value="Third Party Partner Name"   /> 
+                &nbsp;&nbsp;
+                <apex:selectlist value="{!tpname}" size="1">
+                	<apex:selectOptions value="{!partneroptions}" />
+                </apex:selectlist>
+            </apex:outputPanel>
+        </apex:pageBlockSectionItem>     
+   </apex:pageBlockSection>
+   </apex:pageBlock>
+   <apex:PageBlock title="Create New Account" >
+        <h1>  If no Accounts are found after search, create one here. Select a Third Party Partner to create the account. <br/><br/> </h1>           
+        <apex:pageBlockSection columns="1">
+            <apex:InputText value="{!accname}" label="Account Name" />
+            <apex:InputField value="{!acct.Physical_Street_Address_Line_1__c}" />
+            <apex:InputField value="{!acct.Physical_City__c}" />
+            <apex:InputField value="{!acct.Physical_State__c}" />
+            <apex:InputField value="{!acct.Physical_Country__c}" />
+            <apex:InputField value="{!acct.Physical_Postal_Code__c}" />
+            <apex:InputField value="{!acct.phone}" />
+            <apex:InputField value="{!acct.Time_Zone__c}" />
+            <apex:inputText value="{!tppuniqueid}" label="Third Party Unique Id" />
+         </apex:pageBlockSection>
+        <div align="center" draggable="false">
+            <apex:commandButton value="Save New Account" action="{!CreateNewAccount}" />
+        </div>   
+    </apex:PageBlock>
+                      
+  </apex:form>
+  
+  <apex:includeScript value="/support/console/40.0/integration.js"/>
+
+ <script type="text/javascript">
+
+        function openPrimaryTab() {
+
+            sforce.console.openPrimaryTab(undefined,
+
+               'http://www.example.com', true, 'example');
+
+        }
+
+         var callOpenSubtab=function callOpenSubtab(result) {
+
+            sforce.console.openSubtab(result.id,
+
+               'http://www.example.com', true, 'example');
+
+        };
+
+         
+
+        function openSubtab() {
+
+            sforce.console.getEnclosingPrimaryTabId(callOpenSubtab);
+
+        }
+
+ 
+
+        //Sets the title of the current tab to "Example"
+
+        function setTitle() {
+
+            sforce.console.setTabTitle('Third Party Accounts and Cases');
+
+        }
+
+ 
+        var callCloseTab= function callCloseTab(result) {
+
+            sforce.console.closeTab(result.id);
+
+        }
+
+         
+
+        function closeTab() {
+
+            sforce.console.getEnclosingTabId(callCloseTab);
+
+        }
+
+  </script>
+
+  <p/><A HREF="#" onClick="closeTab();return false">Close This Tab</A>
+  
+</apex:page>

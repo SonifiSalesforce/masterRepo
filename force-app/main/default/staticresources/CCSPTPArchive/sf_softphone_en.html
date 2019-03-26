@@ -1,0 +1,440 @@
+﻿<apex:page id="SF" showHeader="false" standardStylesheets="false" doctype="html-5.0">
+
+    <head>
+        <meta charset="utf-8" />
+        <title></title>
+        <script>
+        // Global variable used in sf_softphone.js
+        var Archive_path = '{!JSENCODE($Resource.CCSPTPArchive)}';
+
+        window.onbeforeunload = function(e) {
+            e.preventDefault();
+        };
+
+        /*** begin: translator for English ***/
+
+        var translator = (function() {
+
+            // mapping agent state to translated.
+            // note: agent states are, unlike the others, stored here in small letters.
+            var agentStatesMap = {
+                connecting: "Connecting...",
+                connected: "Connected",
+                reconnecting: "Reconnecting...",
+                disconnected: "Disconnected",
+                online: "Online",
+                offline: "Offline",
+                available: "Available",
+                availableincall: "Available",
+                incall: "In Call",
+                loggedout: "Logged Out",
+                multiple: "Multiple",
+                onhold: "On Hold",
+                pending: "Pending...",
+                preview: "Preview",
+                released: "Released",
+                releasedincall: "Released",
+                releasepending: "Pending Unavailable",
+                ringing: "Ringing",
+                unavailable: "Released",
+                wrapup: "Wrap-up"
+            };
+
+            // mapping call state to translated.
+            var callStatesMap = {
+                INITIALIZED: "Ringing", // not in ringing yet but show it as ringing.
+                Ringing: "Ringing",
+                PickUpPending: "Pick-up Pending",
+                InGreeting: "Playing Greeting",
+                Initializing: "Initializing",
+                PickUpFromHoldPending: "Pick-up From Hold",
+                Preview: "Preview",
+                InCall: "Active",
+                OnHold: "On Hold",
+                OnHoldByDPSAgent: "On Hold",
+                WrapUp: "Wrap-Up",
+                Destructed: "Call Ended",
+                Closed: "Idle",
+                CallOutPending: "Dialing...", // not sure CallOutPending or OutPending will come, or none comes at all?
+                OutPending: "Dialing...",
+                BargeIn: "Barge In",
+                Silent: "Silent",
+                Whisper: "Whisper",
+                Passive: "Passive",
+                SlaveA2AInCall: "On Hold",
+                TransferComplete: "Active", // "Transferred",
+                Conference: "Active" // "Conference"
+            };
+
+            // mapping call direction to translated.
+            var callDirectionsMap = {
+                Incoming: "Incoming",
+                IncomingA2A: "From Agent",
+                Outgoing: "Outgoing",
+                OutgoingA2A: "To Agent",
+                Predictive: "Predictive",
+                Preview: "Preview",
+                TransferredCall: "Transferred"
+            };
+
+            // mapping mediaType (CallInfo.Type) to translated.
+            var mediaTypesMap = {
+                Callback: "Callback",
+                Chat: "Chat",
+                Email: "Email",
+                Voice: "Voice",
+                Voicemail: "Voicemail",
+                VOIP: "Voice"
+            };
+
+            var callHistoryTextMap = {
+                Completed: "Completed"
+            }
+
+            var callFromToTextMap = {
+                tts: "Transfer To System",
+                "Transfer To System": "Transfer To System"
+            }
+
+            function getTranslation(map, text, lcase) {
+                var token = lcase ? text.toLowerCase() : text;
+                if (map.hasOwnProperty(token)) {
+                    return map[token];
+                }
+                return text;
+            }
+
+            function getSearchError(error, sfPopHelper) {
+                var text;
+                if (typeof(error) === "string") {
+                    if (error.indexOf("SfScreenPopError:") === 0) {
+                        // error is returned from sforce.screenPop API call.
+                        text = "Failed to screen pop: " + error.subsring("SfScreenPopError:".length);
+                    } else {
+                        switch (error) {
+                            case sfPopHelper.GET_SCREENPOP_REQUIRED_EMPTY:
+                                text = "One or more required field for search is missing or empty.";
+                                break;
+
+                            case sfPopHelper.GET_SCREENPOP_FAILED:
+                                text = "Error in the record search for screen pop. " + log.lastError();
+                                break;
+
+                            case sfPopHelper.GET_SCREENPOP_NO_SEARCH_RESULT:
+                                text = "No records to screen pop found.";
+                                break;
+
+                            case sfPopHelper.GET_SCREENPOP_NOMORE_SEARCH_OPTIONS:
+                                text = "No records to screen pop found.";
+                                break;
+
+                            default:
+                                text = error;
+                                break;
+                        }
+                    }
+                } else {
+                    text = "Unexpected error in the record search: " + (error.message || error.toString());
+                }
+                return text;
+            }
+
+
+            return {
+                language: "en",
+                agentState: function(state) {
+                    return getTranslation(agentStatesMap, state, true);
+                },
+                callState: function(state) {
+                    return getTranslation(callStatesMap, state);
+                },
+                mediaType: function(name) {
+                    return getTranslation(mediaTypesMap, name);
+                },
+                callDirection: function(name) {
+                    return getTranslation(callDirectionsMap, name);
+                },
+                searchError: function(error, sfPopHelper) {
+                    return getSearchError(error, sfPopHelper);
+                },
+                callHistoryText: function(text) {
+                    return getTranslation(callHistoryTextMap, text);
+                },
+                callFromToText: function(text) {
+                    return getTranslation(callFromToTextMap, text);
+                }
+            }
+        })();
+
+
+        /*** end: translator for English ***/
+        </script>
+        <apex:stylesheet id="st1" value="{!URLFOR($Resource.CCSPTPArchive, 'css/jquery.mobile-1.4.5.min.css')}" />
+        <apex:stylesheet id="st2" value="{!URLFOR($Resource.CCSPTPArchive, 'css/style.css')}" />
+        <script src="/support/api/36.0/interaction.js" type="text/javascript"></script>
+        <apex:includeScript id="js1" value="{!URLFOR($Resource.CCSPTPArchive, 'scripts/jquery-1.11.3.min.js')}" />
+        <apex:includeScript id="js2" value="{!URLFOR($Resource.CCSPTPArchive, 'scripts/jquery.mobile-1.4.5.min.js')}" />
+        <apex:includeScript id="js3" value="{!URLFOR($Resource.CCSPTPArchive, 'scripts/jquery.xml2json.js')}" />
+        <apex:includeScript id="js4" value="{!URLFOR($Resource.CCSPTPArchive, 'scripts/jquery.signalR-2.2.0.min.js')}" />
+        <apex:includeScript id="js5" value="{!URLFOR($Resource.CCSPTPArchive, 'scripts/json2.js')}" />
+        <apex:includeScript id="js6" value="{!URLFOR($Resource.CCSPTPArchive, 'scripts/log4javascript.js')}" />
+        <apex:includeScript id="js7" value="{!URLFOR($Resource.CCSPTPArchive, 'scripts/ccsp.ps.logutil.js')}" />
+        <apex:includeScript id="js8" value="{!URLFOR($Resource.CCSPTPArchive, 'scripts/ccsp.ps.sfcti.js')}" />
+        <apex:includeScript id="js9" value="{!URLFOR($Resource.CCSPTPArchive, 'scripts/ccsp.ps.sfhub.js')}" />
+        <apex:includeScript id="js10" value="{!URLFOR($Resource.CCSPTPArchive, 'scripts/ccsp.ps.ccsputil.js')}" />
+        <apex:includeScript id="js11" value="{!URLFOR($Resource.CCSPTPArchive, 'scripts/callHistoryFeed.js')}" />
+        <apex:includeScript id="js12" value="{!URLFOR($Resource.CCSPTPArchive, 'scripts/sf_softphone.js')}" />
+        <style> /* Tabs */
+        .psWrapper {
+            font-family: sans-serif;
+            color: #555;
+            font-size: 14px;
+            line-height: 24px;
+        }
+           
+        .psTabs li {
+            float: left;
+            list-style-type: none;
+            padding: 5px;
+        }
+        
+        .psTabs a {
+            display: block;
+            text-align: center;
+            text-decoration: none;
+            text-transform: uppercase;
+            color: #888;
+            border-bottom: 2px solid #888;
+            background: #f7f7f7;
+        }
+        
+        .psTabs a:hover,
+        .psTabs a.active {
+            background: #ddd;
+        }
+                
+        .psClearfix:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+        </style>
+        <style type="text/css">
+            #touchPointFrame iframe {
+                    border: none;
+                    width: 100%;
+                    height: 93vh;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="psWrapper">
+            <ul class="psTabs psClearfix" data-tabgroup="first-tab-group">
+                <li><a href="#agentStatusCallInfo" class="active"> SFDC info</a> </li>
+                <li><a href="#touchPointFrame" class="active"> TouchPoint</a> </li>
+            </ul>
+        </div>
+        <section id="first-tab-group" class="psTabgroup">
+            <div id="agentStatusCallInfo">
+                <div>
+                    <div id="company-logo-div" class="logo">
+                        <apex:image id="imgLogo" value="{!$Resource.SF_logo}" />
+                    </div>
+                    <div id="error-indicator-div" class="logo">
+                        <a id="error-indicator" href="#error-indicator-popup-tooltip" data-rel="popup" data-transition="pop" title="error occured...">
+                            <apex:image id="imgError" url="{!URLFOR($Resource.CCSPTPArchive,
+                                            'images/error.png')}" alt="error indicator" />
+                        </a>
+                    </div>
+                </div>
+                <div class="vspacer"></div>
+                <div class="legendBox">
+                    <fieldset>
+                        <legend>Agent Status</legend>
+                        <table border="0">
+                            <tr>
+                                <td class="colortxt">
+                                    <span id="agent-stateText" class="agent-status-text"></span> &nbsp;&nbsp;
+                                    <apex:image id="agent-stateImage" url="{!URLFOR($Resource.CCSPTPArchive, 'images/Available.png')}" alt="" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="colortxt">
+                                    Name:&nbsp;<span id="agent-extension" class="txt-bold"></span>
+                                </td>
+                            </tr>
+                        </table>
+                    </fieldset>
+                </div>
+                <div class="legendBox">
+                    <fieldset>
+                        <legend>Call Info</legend>
+                        <table border="0">
+                            <tr>
+                                <td class="colortxt">Media:</td>
+                                <td><span id="callInfo-mediaType" class="txt-bold"></span></td>
+                            </tr>
+                            <tr>
+                                <td class="colortxt">Direction:</td>
+                                <td><span id="callInfo-direction" class="txt-bold"></span></td>
+                            </tr>
+                            <tr>
+                                <td class="colortxt">State:</td>
+                                <td><span id="callInfo-stateText" class="txt-bold"></span></td>
+                            </tr>
+                            <tr>
+                                <td class="colortxt">From:</td>
+                                <td><span id="callInfo-from" class="txt-bold"></span></td>
+                            </tr>
+                            <tr>
+                                <td class="colortxt">To:</td>
+                                <td><span id="callInfo-to" class="txt-bold"></span></td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                            </tr>
+                            <tr>
+                            </tr>
+                        </table>
+                    </fieldset>
+                    <div class="vspacer"></div>
+                    <div class="vspacer"></div>
+                    <table class="opt-table">
+                        <tr>
+                            <td class="action-cell">
+                                <a id="link-pagesync" href="" data-rel="popup" class="styled-button">Page Sync</a>
+                            </td>
+                            <td class="action-cell">
+                                <!-- popup for call data -->
+                                <a id="link-popup-callDetail" href="#popup-callDetail" data-rel="popup" data-position-to="window" class="styled-button">Call Details</a>
+                            </td>
+                        </tr>
+                    </table>
+                    <div data-role="popup" id="popup-callDetail" data-overlay-theme="b" data-theme="a" data-tolerance="5,5,5,5" class="ui-content">
+                        <fieldset>
+                            <legend>Call Details</legend>
+                            <table border="0" class="fontsize9">
+                                <tr>
+                                    <td class="calldetail-item-label">CallID:</td>
+                                    <td><span id="callDetail-callId" class="calldetail-item-value"></span></td>
+                                </tr>
+                                <tr>
+                                    <td class="calldetail-item-label">From:</td>
+                                    <td><span id="callDetail-from" class="calldetail-item-value"></span></td>
+                                </tr>
+                                <tr>
+                                    <td class="calldetail-item-label">To:</td>
+                                    <td><span id="callDetail-to" class="calldetail-item-value"></span></td>
+                                </tr>
+                                <tr>
+                                    <td class="calldetail-item-label">Queue:</td>
+                                    <td><span id="callDetail-queueName" class="calldetail-item-value"></span></td>
+                                </tr>
+                                <tr>
+                                    <td class="calldetail-item-label">Caller Name:</td>
+                                    <td><span id="callDetail-callerName" class="calldetail-item-value"></span></td>
+                                </tr>
+                            </table>
+                        </fieldset>
+                        <div class="vspacer"></div>
+                        <apex:image id="callDetail-closebtn" title="Close" styleClass="pointer" url="{!URLFOR($Resource.CCSPTPArchive,
+                                        'images/Close.png')}" alt="Close" /> &nbsp;&nbsp;
+                    </div>
+                    <div class="vspacer"></div>
+                    <div id="trace-option-section" class="trace-option">
+                        <table border="0">
+                            <tr>
+                                <td style="width:20px">trace:</td>
+                                <td>
+                                    <div class="trace-radio">
+                                        <fieldset data-role="controlgroup" data-type="horizontal" data-mini="true">
+                                            <input type="radio" name="trace-option" id="radio-trace-off" value="off" checked="checked" />
+                                            <label for="radio-trace-off">off</label>
+                                            <input type="radio" name="trace-option" id="radio-trace-on" value="on" />
+                                            <label for="radio-trace-on">on</label>
+                                        </fieldset>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <!-- popup for dial action-->
+                    <!-- <a id="link-popup-dial" href="#popup-dial" data-rel="popup" data-position-to="window" class="styled-button">Dial Actions</a> -->
+                    <div data-role="popup" id="popup-dial" data-overlay-theme="b" data-theme="a" data-torelance="5,5,5,5" class="ui-content">
+                        <div class="legendBox">
+                            <fieldset>
+                                <legend>Dial</legend>
+                                <table border="0">
+                                    <tr>
+                                        <td class="dialaction-item-label">To:</td>
+                                        <td><span id="dialAction-number" class="dialaction-item-value"></span></td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="2">
+                                            <apex:image id="cancelbtn" title="Cancel" styleClass="pointer" url="{!URLFOR($Resource.CCSPTPArchive,
+                                                            'images/Close.png')}" alt="Cancel" />&nbsp;&nbsp;
+                                            <apex:image id="dialbtn" title="Dial" styleClass="pointer" url="{!URLFOR($Resource.CCSPTPArchive,
+                                                            'images/Dial.png')}" alt="Dial" />&nbsp;&nbsp;
+                                            <apex:image id="xferbtn" title="Transfer" styleClass="pointer" url="{!URLFOR($Resource.CCSPTPArchive,
+                                                            'images/Transfer.png')}" alt="Transfer" /> &nbsp;&nbsp;
+                                        </td>
+                                    </tr>
+                                </table>
+                            </fieldset>
+                        </div>
+                    </div>
+                    <!-- tooltip popup for error indicator -->
+                    <div id="error-indicator-popup-tooltip" data-role="popup" data-mini="true" class="ui-content" data-theme="a" style="max-width:200px;">
+                        <p>
+                            <div id="error-indicator-popup-text">Probably an error in the softphone javascript. Turn the trace log on to check the error.</div>
+                        </p>
+                        <div id="error-indicator-buttons-div">
+                            <a href="#" class="ui-btn ui-corner-all ui-btn-inline ui-mini ui-btn-b" data-rel="back">OK</a>
+                            <a id="error-indicator-show-recent-btn" href="#" class="ui-btn ui-corner-all ui-btn-inline ui-mini ui-btn-b" data-rel="back">More</a>
+                        </div>
+                    </div>
+                    <!-- search result modal which is displayed when screen pop url not found. -->
+                    <div id="popup-search-result" data-role="popup" data-overlay-theme="b" data-theme="a" data-tolerance="5,5,5,5" class="ui-content" style="max-width:200px;">
+                        <p>
+                            <div id="search-result-text"></div>
+                        </p>
+                        <div id="search-result-buttons-div">
+                            <a href="#" class="ui-btn ui-corner-all ui-btn-inline ui-mini ui-btn-b" data-rel="back">OK</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="touchPointFrame">
+                <iframe src="https://dnccsp12.dn12.loc/touchpoint" />
+            </div>
+        </section>
+        <script type="text/javascript">
+        // when wanted to supress the following warning, uncomment the lines below.
+        // SEC7118: XMLHttpRequest for http:// required Cross Origin Resource Sharing (CORS).
+        /***
+        (function () {
+        var shortenedDomain = document.domain.replace(/[\w|-]*\./, '');
+        document.domain = shortenedDomain;
+        log.debug("domain has been shortened to " + document.domain);
+        })();
+        ***/
+        </script>
+        <script type="text/javascript"> /* Tabs */
+        $('.psTabgroup > div').hide(); 
+        $('.psTabgroup > div:first-of-type').show(); 
+        $('.psTabs a').click(
+            function(e){ 
+                e.preventDefault(); 
+                var $this = $(this), 
+                    tabgroup = '#'+$this.parents('.psTabs').data('tabgroup'), 
+                    others = $this.closest('li').siblings().children('a'), 
+                    target = $this.attr('href'); 
+                others.removeClass('active'); 
+                $this.addClass('active'); 
+                $(tabgroup).children('div').hide(); 
+                $(target).show(); 
+            });
+        </script>
+    </body>
+</apex:page>

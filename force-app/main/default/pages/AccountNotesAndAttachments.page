@@ -1,0 +1,15 @@
+<apex:page title="Notes & Attachments - Account" 
+           name="AccountNotesAndAttachmentsPage"
+           extensions="AccountNotesAndAttachmentsExtension"
+           standardController="Account"
+           tabStyle="Account">
+    
+    <apex:form >
+        <apex:pageMessages showDetail="true" escape="false" />
+        <div style="margin: 15px 0px;">
+            <c:NotesAndAttachmentsList interface="{!cloneableInterface}"
+                showAll="{!showAllRecords}" />
+        </div>
+    </apex:form>
+    
+</apex:page>

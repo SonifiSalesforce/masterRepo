@@ -1,0 +1,17 @@
+<apex:page standardcontroller="Case" >
+    <apex:pageBlock >
+        <apex:pageBlockSection title="Location for {!Case.CaseNumber}">
+            <apex:outputPanel >
+                <apex:outputField value="{!Case.Account.Physical_Street_Address_Line_1__c}"/><br/>
+                <apex:outputField value="{!Case.Account.Physical_City__c}"/>, &nbsp;
+                <apex:outputField value="{!Case.Account.Physical_State__c}"/> &nbsp;
+                <apex:outputField value="{!Case.Account.Physical_Postal_Code__c}"/><br/>
+                <apex:outputField value="{!Case.Account.Physical_Country__c}"/>
+            </apex:outputPanel>
+                <apex:map width="600px" height="400px" mapType="roadmap" zoomLevel="17" center="{!Case.Account.Physical_Street_Address_Line_1__c},{!Case.Account.Physical_City__c},{!Case.Account.Physical_State__c}">
+                    <apex:mapMarker title="{!Case.Account.Name}"
+                        position="{!Case.Account.Physical_Street_Address_Line_1__c},{!Case.Account.Physical_City__c},{!Case.Account.Physical_State__c}" />
+                </apex:map> 
+        </apex:pageBlockSection>
+    </apex:pageBlock>
+</apex:page>

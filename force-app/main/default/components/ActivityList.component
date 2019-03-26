@@ -1,0 +1,568 @@
+<apex:component layout="block" allowDML="true"
+    controller="ActivityListController">
+    
+    <apex:attribute name="interface" type="CloneableInterface" required="true"
+                    assignTo="{!cloneableInterfaceObject}"
+                    description="Interface object that contains methods for supporting the list." />
+    
+    <apex:attribute name="showAll" type="Boolean" required="false" default="false"
+                    assignTo="{!showAllRecords}"
+                    description="Indicates whether to show all records or a mini list of records (for embedding in pages)." />
+
+<!-- 
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js" />
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js" />
+-->
+ 
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"/>
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"/>
+    
+    <apex:styleSheet value="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/smoothness/jquery-ui.css" />
+    <apex:stylesheet value="{!URLFOR($Resource.CustomResources, 'custom-styles.css')}" />
+    
+    <style>
+    	.page-title {
+    		display: block;
+    		font-size: 1.8em;
+    		padding: 5px 0px;
+    	}
+        
+        .package-container {
+            height: 265px;
+            width: auto;
+            float: none;
+            padding: 10px 10px 15px 10px;
+            overflow: hidden;
+        }
+
+        .packageable-item-container {
+            height: 265px;
+            width: auto;
+            padding: 10px 10px 15px 10px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        
+        .dialog-form {
+            font-size: 10px;
+        }
+        
+        .filter-container {
+            font-size: 10px;
+        }
+        
+        .item-action {
+            color: white !important;
+        }
+        
+        .noActivity {
+            color: black;
+            background: #f8f8f8;
+            border: 1px solid lightgray;
+            padding: 5px;
+        }
+        
+        .list-header {
+        	display: inline;
+        }
+        
+        .list-header-title {
+        	float: left;
+        	font-size: 1.4em;
+        	font-weight: bold;
+        	display: inline-block;
+        	margin: 10px;
+        	
+        }
+        
+        .list-header-buttons {
+        	float: right;
+        	margin: 10px 15px;
+        }
+        
+        .list-header-buttons input {
+        	float: right;
+        	margin: 0px 3px;
+        }
+        
+    </style>
+    
+    <script>
+        var $cloneToDialog,
+            $j = jQuery.noConflict();
+            
+        jQuery(document).ready(function() {
+            
+            // Make case-insensitive
+            $j.expr[":"].contains = $j.expr.createPseudo(function(value) {
+                return function(el) {
+                    return $j(el).text().toUpperCase().indexOf(value.toUpperCase()) >= 0;
+                };
+            });
+            
+            /* CLONE-TO DIALOG */
+            $cloneToDialog = $j("#clone-to-dialog");
+            $cloneToDialog.dialog({
+                autoOpen: false,
+                resizable: false,
+                height: 707,
+                width: 800,
+                modal: true,
+                buttons: {
+                    "Clone": function() {
+                        
+                        // Get activities
+                        var cloneableItemsList = [];
+                        $j(".activity-checkable:checked").each(function() {
+                            var ActivityId = $j(this).data("id");
+                            if (ActivityId != undefined && ActivityId != null && ActivityId != "") {
+                                cloneableItemsList.push($j(this).data("id"));
+                            }
+                        });
+                        
+                        // Get clone-to items
+                        var cloneToList = [];
+                        $j(".package-container").find(".selectable > li").each(function() {
+                            cloneToList.push($j(this).data("id"));
+                        });
+                        
+                        // Check for selections
+                        if (cloneToList.length == 0) {
+                        	window.alert("Please select at least one item to clone to.");
+                        	return false;
+                        }
+                        
+                        $j(this).dialog("close");
+                        
+                        // Clone
+                        doCloneItems(cloneableItemsList.join(","), cloneToList.join(","));
+                        
+                        return false;
+                    },
+                    Cancel: function() {
+                        $j(this).dialog("close");
+                    }
+                }
+            });
+            
+            /* CONFIRM DIALOG */
+            $confirmDeleteDialog = $j("#confirm-delete-dialog");
+            $confirmDeleteDialog.dialog({
+                autoOpen: false,
+                resizable: false,
+                height: 250,
+                width: 325,
+                modal: true,
+                buttons: {
+                    "Confirm": function() {
+                        var deleteItemsList = [];
+                        deleteItemsList.push($j(this).data("id"));
+                        doDeleteItems(deleteItemsList.join(","));
+                        $j(this).dialog("close");
+                    },
+                    Cancel: function() {
+                        $j(this).dialog("close");
+                    }
+                }
+            });
+            
+            initializeComponent();
+        });
+        
+        /* Initialize event listeners and identifiers for the component  */
+        initializeComponent = function() {
+
+            // Attach click event to checkbox header column
+            $j("#activity-check-all").click(function() {
+                affectCheckBoxes($j(".activity-checkable"), $j(this).prop("checked"));
+            });
+            
+            // Attach click event to LOG A CALL button
+            $j("#LogACall").click(function() {
+                var ActivityId = $j(this).data("id");
+                var urlString = "/00T/e?title=Call";
+                if ("{!parentObjectWho}" != "") { urlString += "&who_id={!parentObjectWho}"; }
+                urlString += "&what_id={!parentObject.Id}&followup=1&tsk5=Call&retURL=%2F{!URLENCODE(redirectUrl)}";
+                navigateTo(urlString);
+                return false;
+            });
+
+            // Attach click event to MAIL MERGE button
+            $j("#MailMerge").click(function() {
+                var urlString = "/mail/mmchoose.jsp?id={!parentObject.Id}&1={!URLENCODE(parentObjectName)}&retURL=%2F{!URLENCODE(redirectUrl)}";
+                navigateTo(urlString);
+                return false;
+            });
+
+            // Attach click event to SEND EMAIL button
+            $j("#SendEmail").click(function() {
+                var urlString = "/_ui/core/email/author/EmailAuthor?";
+                if ("{!parentObjectWho}" != "") { urlString += "p2_lkid={!parentObjectWho}&"; }
+                urlString += "rtype=003&p3_lkid={!parentObject.Id}&retURL=%2F{!URLENCODE(redirectUrl)}";
+                navigateTo(urlString);
+                return false;
+            });
+
+            // Attach click event to VIEW ALL button
+            $j("#ViewAll").click(function() {
+                var urlString = "{!URLFOR($Page.ActivityList, null, [id=parentObject.Id, showAll='true'], true)}";
+                navigateTo(urlString);
+                return false;
+            });
+            
+            // Attach click event to CLONE button
+            $j("#MassClone").click(function() {
+                
+                // Check for selected items
+                if ($j(".activity-checkable:checked").length == 0) {
+                    window.alert("Please select at least one activity to clone.");
+                    return false;
+                }
+                
+                // Get the clone-to items
+                doGetCloneToItems();
+            });
+            
+            // Attach click event to RETURN-TO-SENDER button
+            $j("#ReturnToSender").click(function() {
+            	var urlString="/{!parentObject.Id}";
+            	navigateTo(urlString);
+            });
+            
+            // Attach click event to EDIT links
+            $j(".action-edit").click(function() {
+                var urlString = "/" + $j(this).data("id") + "/e?retURL=%2F{!URLENCODE(redirectUrl)}";
+                navigateTo(urlString);
+            });
+            
+            // Attach click event to DELETE links
+            $j(".action-delete").click(function() {
+
+                var ActivityId = $j(this).data("id");
+                var activityName = $j(this).data("name");
+                
+                // Prompt user to confirm
+                $confirmDeleteDialog.data("id", ActivityId);
+                $confirmDeleteDialog.html(
+                        '<p class="dialog-text">Are you sure you want to delete the activity:'
+                        + '<br/><br/><i>' + activityName + '</i></p>'); 
+                $confirmDeleteDialog.dialog("open");
+                $confirmDeleteDialog.dialog("option", "title", "Delete Activity");
+            });
+            
+            // Add selected item ADD actions to tagged elements
+            $j(".add-action").click(function() {
+                var $el = $j(this).parents(".packageable-item-container")[0];
+                if ($el == null || $el == undefined) {
+                    $el = $j(this).parents(".package-container")[0];
+                }
+                $j($el).find(".ui-selected")
+                    .detach()
+                    .removeClass("ui-selected")
+                    .appendTo("#cloneToList");
+                hidePackageMessage();
+            });
+            
+            // Add selected item RESET actions to tagged elements
+            $j(".reset-action").click(function() {
+                var $el = $j(this).parents(".packageable-item-container")[0];
+                if ($el == null || $el == undefined) { $el = $j(this).parents(".package-container")[0]; }
+                $j($el).find(".ui-selected").removeClass("ui-selected");
+            });
+            
+            // Add selected item REMOVE actions to tagged elements
+            $j(".remove-action").click(function() {
+
+                var $el = $j($j(this).parents(".package-container")[0]);
+                var $selectedEl = $el.find(".ui-selected").detach();
+                $j($selectedEl).removeClass("ui-selected");
+                
+                $j($selectedEl).each(function() {
+                    var itemType = $j(this).data("item-type");
+                    $j(this).appendTo("#" + itemType + "ItemList");
+                });
+                
+                // Check for no more items in package
+                if ($el.find(".selectable > li").length == 0) {
+                    setPackageMessage(null);
+                }
+            });
+            
+            // Attach selectable event to all tagged elements
+            $j(".selectable").selectable({ cancel: ".package-item-icon"});
+        
+            // Add search filtering
+            $j(".filter-text").keyup(function() {
+                var filterValue = $j(this).val();
+                var $itemList = $j("#" + $j(this).data("list-name"));
+                if (filterValue == null || filterValue == "") {
+                    $j($itemList).children("li").show();
+                } else {
+                    $j($itemList).children("li:contains('" + filterValue + "')").show();
+                    $j($itemList).children("li:not(:contains('" + filterValue + "'))").hide();
+                }
+            });
+            
+            // Add filter reset
+            $j(".cancel-filter-action").click(function() {
+                var $filterText = $j(this).prev(".filter-text");
+                $filterText.val("");
+                $j("#" + $filterText.data("list-name")).children("li:hidden").show();
+            });
+            
+            // Add click event to activity columns
+            $j(".activity-column").click(function() {
+                var $rowCheckbox = $j(this).parents("tr:eq(0)").find(".activity-checkable:eq(0)");
+                $rowCheckbox.prop("checked", !$rowCheckbox.prop("checked"));
+            });
+            
+            // Initialize package meesage
+            setPackageMessage();
+        };
+        
+        /* Selects/Deselects checkboxes */
+        affectCheckBoxes = function($checkboxes, checked) {
+            $checkboxes.each(function() {
+                $j(this).prop("checked", checked);
+            });
+        };
+        
+        /* Sets package message */
+        setPackageMessage = function(message) {
+            
+            if (message == null || message == "") {
+                message = '<p style="font-weight: bold;">No items have been selected to clone.</p>'
+                            + '<p>To add items to clone, select the desired items from the list ' 
+                            + 'above and then click the \'Add Selected\' button.</p>';
+            }
+            
+            $j(".package-message").html(message).removeClass("error-message").show();
+        }
+        
+        /* Hides package message */
+        hidePackageMessage = function() {
+            $j(".package-message").hide();
+        }
+        
+        /* Build and display clone-to dialog */
+        showCloneToDialog = function() {
+            
+            // Check for items to clone
+            var cloneToItems = JSON.parse($j("#cloneToItemsList").val());
+            var lineCount = cloneToItems.length;
+            if (lineCount == 0) {
+                window.alert('No {!LOWER(parentObjectName)} items found to for cloning activities.');
+                return false;
+            }
+            
+            // Clear clone-to list
+            $j("#cloneToList").empty();
+            
+            var index = 0;
+            var lineItems = [];
+            while (index < lineCount) {
+                var itemId = cloneToItems[index].Id;
+                var itemName = cloneToItems[index].Name;
+                var itemOwner = cloneToItems[index].OwnerId;
+                var lineItem =
+                      '<li class="ui-widget-content selectable-item opportunity-item" '
+                    + 'data-item-type="cloneTo" '
+                    + 'data-owner-id="' + itemOwner + '" '
+                    + 'data-id="' + itemId.substr(0, 15) + '">' + itemName + '</li>';
+                lineItems.push(lineItem);
+                index++;
+            }
+            
+            $j("#cloneToItemList").html(lineItems.join(""));
+            
+            // Show clone dialog
+            $cloneToDialog.dialog("open");
+            $cloneToDialog.dialog("option", "title", "Select {!parentObjectName} Records");
+        };
+        
+        navigateTo = function(urlString) {
+			if ({!showAll} == true) {
+				window.location.href = urlString;
+			} else {
+				window.open(urlString, "_blank");
+			}
+        }; 
+    </script>
+    
+    <apex:actionRegion >
+        
+        <apex:actionFunction name="doGetCloneToItems" action="{!getCloneToItems}"
+            onComplete="showCloneToDialog(); return false;"
+            rerender="FieldData" />
+            
+        <apex:actionFunction name="doDeleteItems" action="{!deleteItems}"
+            onComplete="initializeComponent(); return false;" 
+            rerender="ActivityListBlock">
+            <apex:param name="deletedItemIdList" value="" />
+        </apex:actionFunction>
+        
+        <apex:actionFunction name="doCloneItems" action="{!cloneItems}"
+            onComplete="initializeComponent(); return false;" 
+            rerender="ActivityListBlock">
+            <apex:param name="cloneableItemIdList" value="" />
+            <apex:param name="cloneToIdList" value="" />
+        </apex:actionFunction>
+            
+    </apex:actionRegion>
+    
+    <apex:outputPanel id="FieldData" style="display: none;">
+        <input type="hidden" id="cloneToItemsList" value="{!cloneToItemsJson}" />
+    </apex:outputPanel>
+    
+    <apex:outputText value="{!parentObjectRecordName}" styleClass="page-title" rendered="{!showAll}" />
+    
+    <apex:pageBlock id="ActivityListBlock" title="Activities">
+        
+        <apex:pageMessage strength="3" escape="false"
+                severity="error" 
+                title="{!pageError.Summary}"
+                summary="{!pageError.Detail}"
+                rendered="{!hasPageError}" />
+    
+    	<apex:facet name="header">
+    		<div class="list-header">
+	   			<div class="list-header-title">Activities</div>
+	   			<div class="list-header-buttons">
+		            <input type="button" id="ViewAll" value="View All" 
+		                style="display: {!IF(AND(!hasPageError, !ISNULL(recordList), !showAll), 'inherit', 'none')};" />
+		            <input type="button" id="ReturnToSender" value="Return to {!parentObjectName}"
+		                title="Return to the {!LOWER(parentObjectName)} page"
+		                style="display: {!IF(showAll, 'inherit', 'none')};" />
+		            <input type="button" id="MassClone" value="Mass Clone" 
+		                style="display: {!IF(AND(!hasPageError, !ISNULL(recordList), showAll), 'inherit', 'none')};" />
+		            <!-- 
+		            <input type="button" id="SendEmail" value="Send An Email" />
+		            <input type="button" id="MailMerge" value="Mail Merge" />
+		             -->
+		            <input type="button" id="LogACall" value="Log A Call" />
+	   			</div>
+    		</div>
+        </apex:facet>
+        
+        <apex:pageBlockSection columns="1" showHeader="false" rendered="{!!hasPageError}">
+            
+            <apex:outputPanel layout="block" styleClass="noActivity" rendered="{!ISNULL(recordList)}">
+                No records to display.
+            </apex:outputPanel>
+            
+            <apex:pageBlockTable id="ActivityTable" value="{!recordList}" var="record"
+                    rendered="{!NOT(ISNULL(recordList))}">
+                
+                <apex:column style="width: 22px;" rendered="{!showAll}">
+                    <apex:facet name="header">
+                        <input type="checkbox" id="activity-check-all" class="activity-checkable" />
+                    </apex:facet>
+                    <input type="checkbox" class="activity-checkable" 
+                            data-id="{!record.ActivityId}" />
+                </apex:column>
+                
+                <apex:column styleClass="activity-column" style="width: 50px;">
+                    <apex:facet name="header">Action</apex:facet>
+                    <a class="actionLink action-edit" href="#"
+                            data-id="{!record.ActivityId}">Edit</a>
+                    |
+                    <a class="actionLink action-delete" href="#" onclick="return false;" 
+                            data-id="{!record.ActivityId}" 
+                            data-name="{!record.Subject}">Del</a>
+                </apex:column>
+                
+                <apex:column styleClass="activity-column" >
+                    <apex:facet name="header">Subject</apex:facet>
+                    <apex:outputText value="{!record.Subject}" />
+                </apex:column>
+                
+                <apex:column styleClass="activity-column" >
+                    <apex:facet name="header">Task</apex:facet>
+                    <apex:inputCheckbox value="{!record.IsTask}" disabled="true" />
+                </apex:column>
+                
+                <apex:column styleClass="activity-column" >
+                    <apex:facet name="header">Due Date</apex:facet>
+                    <apex:outputText value="{0, Date, MM/dd/yyyy}">
+                    	<apex:param value="{!record.ActivityDate}" />
+                    </apex:outputText>
+                </apex:column>
+
+                <apex:column styleClass="activity-column" >
+                    <apex:facet name="header">Status</apex:facet>
+                    <apex:outputText value="{!record.Status}" />
+                </apex:column>
+                
+                <apex:column styleClass="activity-column" >
+                    <apex:facet name="header">Priority</apex:facet>
+                    <apex:outputText value="{!record.Priority}" />
+                </apex:column>
+                
+                <apex:column styleClass="activity-column" >
+                    <apex:facet name="header">Assigned To</apex:facet>
+                    <a href="/{!record.OwnerId}">{!record.OwnerName}</a>
+                </apex:column>
+            </apex:pageBlockTable>
+        </apex:pageBlockSection>
+    </apex:pageBlock>
+    
+    <!-- --------------------------------------------------------------------------------------- -->
+    <!-- DIALOGS                                                                                 -->
+    <!-- --------------------------------------------------------------------------------------- -->
+    
+    <!-- CONFIRM DELETE DIALOG -->
+    <div id="confirm-delete-dialog" class="confirm-dialog" style="display: none;">
+    </div>
+    
+    <!-- CLONE-TO DIALOG -->
+    <apex:outputPanel id="CloneToDialog">
+        <div id="clone-to-dialog" class="dialog-form" style="display: none;">
+    
+            <div class="packageable-item-container">
+                <div class="container-header">
+                    <span class="container-header-text">{!parentObjectName} Items</span>
+                    <div class="filter-container">
+                        <input type="text" class="filter-text" data-list-name="cloneToItemList" placeholder=" { Search within list }" />
+                        <a class="filter-action cancel-filter-action" href="#" onclick="return false;">&#10799;</a>
+                    </div>
+                </div>
+                
+                <div class="scrollable">
+                    <ol id="cloneToItemList" class="selectable" />
+                </div>
+                
+                <div class="item-action-container">
+                    <a class="item-action add-action" href="#" onclick="return false;" title="Add selected items">&nbsp;&nbsp;Add Selected&nbsp;&nbsp;</a>
+                    <a class="item-action reset-action" href="#" onclick="return false;" title="Clear all current selections">&nbsp;&nbsp;Clear Selections&nbsp;&nbsp;</a>
+                </div>
+            </div>
+            
+            <div class="package-container">
+                <div class="container-header">
+                    <span class="container-header-text">Clone-To List</span>
+                    <div class="filter-container">
+                        <input type="text" class="filter-text" data-list-name="cloneToList" placeholder=" { Search within list }" />
+                        <a class="filter-action cancel-filter-action" href="#" onclick="return false;">&#10799;</a>
+                    </div>
+                </div>
+                
+                <div class="package-message" style="display: none;"/>
+                
+                <div class="scrollable">
+                    <ol id="cloneToList" class="selectable">
+                    </ol>
+                </div>
+
+                <div class="item-action-container">
+                    <a class="item-action remove-action" href="#" 
+                        onclick="return false;"
+                        title="Remove selected items from package">&nbsp;&nbsp;Remove Selected&nbsp;&nbsp;</a>
+                    <a class="item-action reset-action" href="#" 
+                        onclick="return false;"
+                        title="Clear all current selections">&nbsp;&nbsp;Clear Selections&nbsp;&nbsp;</a>
+                </div>
+            </div>
+            
+        </div>
+    </apex:outputPanel>
+</apex:component>

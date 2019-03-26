@@ -1,0 +1,5 @@
+<apex:page title="Notes & Attachments" 
+           name="NotesAndAttachmentsPage"
+           controller="NotesAndAttachmentsExtension"
+		   action="{!checkRedirect}">
+</apex:page>

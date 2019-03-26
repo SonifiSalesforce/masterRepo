@@ -1,0 +1,9 @@
+<apex:page title="Case" 
+		   tabStyle="Case"
+		   standardController="Case"
+		   extensions="CaseRedirectExtension"
+		   action="{!redirectCase}">
+		
+	<input type="hidden" value="{!Case.IsClosed}" />
+	
+</apex:page>

@@ -1,0 +1,17 @@
+<apex:page standardController="Case" extensions="CaseLegalEntityExtensionController" standardStylesheets="true">
+    <apex:form >
+        <apex:pageBlock tabStyle="Case">
+            <apex:pageBlockTable value="{!SitePartnerAccounts}" var="lew">
+                <apex:column headerValue="Partner Name">   
+                    <apex:outputLink value="/{!lew.partnerId}" target="_top">{!lew.partnerName}</apex:outputLink>
+                </apex:column>
+                <apex:column headerValue="Partner Role">
+                    <apex:outputText >{!lew.partnerRole}</apex:outputText>
+                </apex:column>
+                <apex:column headerValue="Partner Address">
+                    <apex:outputText >{!lew.partnerAddress}</apex:outputText>
+                </apex:column>
+            </apex:pageBlockTable>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>

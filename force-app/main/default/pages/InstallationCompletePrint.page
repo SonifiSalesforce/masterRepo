@@ -1,0 +1,828 @@
+<apex:page standardController="Work_Order__c" extensions="InstallationCompleteExtension" wizard="true" showheader="true" sidebar="false" title="Installation" >
+        <style type="text/css" media="print">
+            .noPrint 
+            {
+                display:none;
+            }
+        </style>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js" > </script>
+		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js" > </script>
+		<script src="{!URLFOR($Resource.CustomResources, 'fancytree/src/jquery.fancytree.js')}" type="text/javascript"></script>
+		<script src="{!URLFOR($Resource.CustomResources, 'fancytree/src/jquery.fancytree.table.js')}" type="text/javascript"></script>
+		<link href="{!URLFOR($Resource.CustomResources, 'fancytree/src/skin-lion/ui.fancytree.css')}" rel="stylesheet" type="text/css"></link>
+			
+		<style type="text/css">
+			#treetable{
+		    	border:none;
+		    	/*table-layout: fixed;
+		    	width:500px;*/
+		  	}
+		  	#treetable2{
+		    	border:none;
+		    	/*table-layout: fixed;
+		    	width:500px;*/
+		  	}
+		  	.alignCenter {
+			   text-align: center;
+			}
+			
+		</style>
+		
+		<script type="text/javascript">
+            function printScreen()
+	        { 
+	            window.print();
+	        }
+	        function downloadFile()
+	        { 
+	           	window.open("{!otherForms}");
+	        }
+	    </script>
+			
+		<script type="text/javascript">
+           
+			  $(function(){
+			    // Attach the fancytree widget to an existing <div id="tree"> element
+			    // and pass the tree options as an argument to the fancytree() function:
+			    $("#treetable").fancytree({
+			      extensions: ["table"],
+			      checkbox: false,
+			      table: {
+			        indentation: 20,      // indent 20px per node level
+			      },
+			      source: {!treeJSON},
+			      rendercolumns: function(e, data) {
+			      	var node = data.node;
+			      	if(node.data.hasChildren==false){
+				      	$tdList = $(node.tr).find(">td");
+			      		$tdList.eq(1).text(node.data.quantity).addClass("alignCenter");
+				      	$tdList.eq(2).text(node.data.bcd).addClass("alignCenter");
+				      	$tdList.eq(3).text(node.data.partial).addClass("alignCenter");
+				    }
+			      	
+			      }
+			    });
+			  });
+			  
+			  $(function(){
+			    // Attach the fancytree widget to an existing <div id="tree"> element
+			    // and pass the tree options as an argument to the fancytree() function:
+			    $("#treetable2").fancytree({
+			      extensions: ["table"],
+			      checkbox: false,
+			      table: {
+			        indentation: 20,      // indent 20px per node level
+			      },
+			      source: {!treeJSONPartial},
+			      rendercolumns: function(e, data) {
+			      	var node = data.node;
+			      	if(node.data.hasChildren==false){
+				      	$tdList = $(node.tr).find(">td");
+			      		$tdList.eq(1).text(node.data.quantity).addClass("alignCenter");
+				      	$tdList.eq(2).text(node.data.bcd).addClass("alignCenter");
+				      	$tdList.eq(3).text(node.data.partial).addClass("alignCenter");
+				    }
+			      	
+			      }
+			    });
+			  });
+			  
+		</script>
+	<apex:form >    
+        <apex:pageBlock title="{!tab}" id="pageBody">
+        	<apex:pageMessages />
+        	<div class="noPrint">
+        		<apex:pageBlock >
+        			<apex:pageBlockButtons >
+        				<apex:commandButton value="Add Rows" action="{!addAllRows}" rerender="pageBody" />
+            			<apex:commandLink styleclass="btn" style="text-decoration:none;padding:4px;" target="_top" value="Download Other Forms"  onclick="downloadFile();" />
+            			<apex:commandButton value="Print" onclick="printScreen();" />
+	            		<apex:commandButton value="Back" action="{!cancel}" />
+        			</apex:pageBlockButtons>
+		        	<apex:pageBlockSection columns="2" >
+		        		<apex:inputText value="{!headerTasks}" label="Tasks" />
+		        		<apex:inputText value="{!headerTVs}" label="TV Types" />
+		        		<apex:inputText value="{!headerBuildings}" label="Buildings" />
+		        	</apex:pageBlockSection>
+		        </apex:pageBlock>
+	        </div>
+            <!-- ****************************************************************************************************************
+            **********************************************  Cover sheet    ******************************************************
+            *******************************************************************************************************************-->  
+                <apex:pageBlockSection columns="1" title="Cover Sheet" rendered="{!tab == 'Cover Sheet' || tab == 'ALL'}" id="Cover_Sheet">
+                    <apex:pageBlockSection columns="1" collapsible="false">
+                        <apex:outputField value="{!acc.Name}" />
+                        <apex:outputField value="{!acc.Physical_Street_Address_Line_1__c}" />
+                        <apex:outputField value="{!acc.Physical_City__c}" />
+                        <apex:outputField value="{!acc.Physical_State__c}" />
+                        <apex:outputField value="{!acc.Physical_Postal_Code__c}" />
+                        <apex:outputField value="{!installObj.OwnerId}" label="Sonifi Manager"/> 
+                        <apex:outputField value="{!acc.Type}" label="Install Type"/>
+                    </apex:pageBlockSection>          
+                   <!-- <apex:pageBlockSection columns="1" title="Property Information">
+                         <apex:inputField value="{!installObj.General_Manager_del__c}" /> 
+                    </apex:pageBlockSection>        -->
+                </apex:pageBlockSection>   
+             <!-- ****************************************************************************************************************
+            **********************************************  BCF    ******************************************************
+            *******************************************************************************************************************-->
+            <div style="page-break-before:always" > 
+            	<apex:pageBlockSection title="Billing Commencement Acknowledgement Form" columns="1" rendered="{!tab == 'BCF' || tab == 'ALL'}">
+            		 <apex:outputField value="{!acc.Name}" />
+                    <apex:outputField value="{!acc.Physical_Street_Address_Line_1__c}" label="Address" />
+                    <apex:pageBlockSectionItem >
+                   		<apex:outputText value="City, State, Zip" />
+                   		<apex:outputText >{!acc.Physical_City__c} {!acc.Physical_State__c}, {!acc.Physical_Postal_Code__c}</apex:outputText>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSection title="BILLING COMMENCEMENT ACKNOWLEDGEMENT" columns="1">
+                    	<apex:outputPanel >By signing this form, it is understood that billing for the indicated services below will commence on the<br /> indicated date and time.</apex:outputPanel>
+                    	<apex:pageBlockSection columns="1">
+	                    	<apex:outputPanel ><h3>Services turned on</h3></apex:outputPanel>
+	                    	
+	                    	<apex:outputPanel >
+								<table id="treetable" >
+								  	<thead>
+							  			<tr> 
+							    			<th></th>  
+							    			<th class="alignCenter">Quantity</th> 
+							    			<th class="alignCenter">BCD</th> 
+							    			<th class="alignCenter">Partial?</th>
+							    		</tr>
+							    	</thead>
+								  	<tbody>
+								  		<tr>
+								    		<td ></td>  
+								    		<td></td>  
+							    			<td></td> 
+							    			<td></td>  
+							    		</tr>
+								  	</tbody>
+								</table>
+							</apex:outputPanel>
+							<apex:outputPanel ><h3>Services not turned on</h3></apex:outputPanel>
+							<apex:outputPanel >
+								<table id="treetable2">
+								  	<thead>
+							  			<tr> 
+							    			<th></th>  
+							    			<th class="alignCenter">Quantity</th> 
+							    			<th class="alignCenter">BCD</th>
+							    			<th class="alignCenter">Partial?</th> 
+							    		</tr>
+							    	</thead>
+								  	<tbody>
+								  		<tr>
+								    		<td></td>  
+								    		<td ></td>  
+							    			<td ></td> 
+							    			<td></td>  
+							    		</tr>
+								  	</tbody>
+								</table>
+							</apex:outputPanel>
+						</apex:pageBlockSection>
+                    	<apex:pageBlockSectionItem labelStyle="width:25%">
+	                    	<apex:outputText value="Date and Time" />
+	                        <apex:inputText />
+	                    </apex:pageBlockSectionItem>
+	                    <apex:pageBlockSectionItem >
+	                        <apex:outputText value="Customer Signature" />
+	                        <apex:outputText value="______________________________________________________________________________" />
+	                    </apex:pageBlockSectionItem>
+	                    <apex:pageBlockSectionItem >
+	                        <apex:outputText >Customer Name and Title</apex:outputText> 
+	                        <apex:outputText value="______________________________________________________________________________" />
+	                    </apex:pageBlockSectionItem>
+	                    <apex:pageBlockSectionItem >
+	                        <apex:outputText value="Installation Technician Signature" />
+	                        <apex:outputText value="______________________________________________________________________________" />
+	                    </apex:pageBlockSectionItem>
+	                    	                
+                    </apex:pageBlockSection>
+            	</apex:pageBlockSection>
+            </div>
+          
+            <!-- ****************************************************************************************************************
+            **********************************************  Upgrade BCF    ******************************************************
+            *******************************************************************************************************************-->
+            <div style="page-break-before:always" >    
+                <apex:pageBlockSection columns="1" title="Notice of Installation Completion" rendered="{! tab == 'ALL'}" id="Upgrade_BCF">
+                    <apex:outputField value="{!acc.Name}" />
+                    <apex:outputField value="{!acc.Physical_Street_Address_Line_1__c}" label="Address" />
+                    <apex:pageBlockSectionItem >
+                   		<apex:outputText value="City, State, Zip" />
+                   		<apex:outputText >{!acc.Physical_City__c} {!acc.Physical_State__c}, {!acc.Physical_Postal_Code__c}</apex:outputText>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSection columns="1" title="SERVICES INSTALLED AND WORK PERFORMED" >
+                    	<apex:repeat value="{!grandParentItems}" var="item">
+                    		<apex:outputText value="{!item.Order_Item__r.Product__r.Name}" label=""/>
+                    	</apex:repeat>
+                    </apex:pageBlockSection> 
+                    <apex:pageBlockSection columns="1" title="SYSTEM UPGRADE COMPLETION" >
+                    	<apex:outputPanel >By signing this portion of the form, you acknowledge and agree that the following items are true and that the installation at your property has been completed and is acceptable</apex:outputPanel>
+                    	<apex:outputPanel >*The installation personnel have installed the SONIFI system(s) to your satisfaction and in accordance with the specific as outlines in the applicable contract</apex:outputPanel>
+                    	<apex:outputPanel >*Each system is operational and the reception acceptable in all rooms and other areas as applicable.  The cable television channels utilized by the SONIFI system(s) are channels <apex:inputText label="" /> through 125 and sub-band T-9, or the following channels <apex:inputText style="width:300px" label="" /></apex:outputPanel>
+                    	<apex:outputPanel >*The operational and maintenance of the SONIFI system(s) has been fully explained to your staff</apex:outputPanel>
+                    	<apex:outputPanel >*The installation personnel have not left the site unclean and have not damaged any part of the hotel/motel to the best of your knowledge</apex:outputPanel>
+                    	<h3 style="text-align:center;">Your signature is required below before the SONIFI Interactive Corporation installation crew departs this location.</h3>
+                    	<apex:pageBlockSectionItem >
+                        <apex:outputText value="Date and Time" />
+                        <apex:inputText />
+	                    </apex:pageBlockSectionItem>
+	                    <apex:pageBlockSectionItem >
+	                        <apex:outputText value="Customer Signature" />
+	                        <apex:outputText value="______________________________________________________________________________" />
+	                    </apex:pageBlockSectionItem>
+	                    <apex:pageBlockSectionItem >
+	                        <apex:outputText >Customer Name and Title</apex:outputText> 
+	                        <apex:outputText value="______________________________________________________________________________" />
+	                    </apex:pageBlockSectionItem>
+	                    <apex:pageBlockSectionItem >
+	                        <apex:outputText value="Installation Technician" />
+	                        <apex:outputText value="______________________________________________________________________________" />
+	                    </apex:pageBlockSectionItem>
+	                    <h2>INSTALLATION COMPLETION</h2>
+	                    <apex:inputText label="Number of Installed Rooms" />
+	                    <apex:inputText label="Date and Time" />
+                    </apex:pageBlockSection>      
+                </apex:pageBlockSection>
+            </div>    
+
+            <!-- ****************************************************************************************************************
+            **********************************************  BB BCF    ******************************************************
+            *******************************************************************************************************************-->
+            
+            <!-- ****************************************************************************************************************
+            **********************************************  Spare Equipment    ******************************************************
+            *******************************************************************************************************************-->
+            <!--<div style="page-break-before:always" >    
+                <apex:pageBlockSection columns="1" title="Spare Equipment" rendered="{!tab == 'Spare Equipment' || tab == 'ALL'}" id="SPARE">
+                       
+                </apex:pageBlockSection>
+            </div> -->
+            <!-- ****************************************************************************************************************
+            **********************************************  SOW    ******************************************************
+            *******************************************************************************************************************-->
+            <div style="page-break-before:always" >    
+                <apex:pageBlockSection columns="1" title="Installation SOW Page" rendered="{!tab == 'SOW' || tab == 'ALL'}" id="SOW">
+                	<apex:outputField value="{!acc.Name}" />
+                	<apex:pageBlockSection title="MATV Work" columns="1">
+                		<apex:selectRadio value="{!installObj.MATV_Work_Performed__c}">
+                            <apex:selectOptions value="{!yesNoList}" />
+                        </apex:selectRadio>
+                        <apex:panelGrid columns="8">
+                        	<apex:outputPanel >Complete Rewire</apex:outputPanel>
+                        	<apex:inputField value="{!installObj.MATV_Work_Complete_Rewire__c}" />
+                        	<apex:outputPanel >&nbsp;&nbsp;&nbsp;Partial Rewire</apex:outputPanel>
+                        	<apex:inputField value="{!installObj.MATV_Work_Partial_Rewire__c}" />
+                        	<apex:outputPanel >&nbsp;&nbsp;&nbsp;New Connectors Only</apex:outputPanel>
+                        	<apex:inputField value="{!installObj.MATV_Work_New_Connectors_Only__c}" />
+                        	<apex:outputPanel >&nbsp;&nbsp;&nbsp;New Trunks</apex:outputPanel>
+                        	<apex:inputField value="{!installObj.MATV_Work_New_Trunks__c}" />
+                        	<apex:outputPanel >Complete Retap</apex:outputPanel>
+                        	<apex:inputField value="{!installObj.MATV_Work_Complete_Retap__c}" />
+                        	<apex:outputPanel >&nbsp;&nbsp;&nbsp;Partial Retap</apex:outputPanel>
+                        	<apex:inputField value="{!installObj.MATV_Work_Partial_Retap__c}" />
+                        	<apex:outputPanel >&nbsp;&nbsp;&nbsp;Check and Repair</apex:outputPanel>
+                        	<apex:inputField value="{!installObj.MATV_Work_MATV_Check_and_Repair__c}" />
+                        	<apex:outputPanel >&nbsp;&nbsp;&nbsp;Balance Amplifiers</apex:outputPanel>
+                        	<apex:inputField value="{!installObj.MATV_Work_Balance_Amplifiers__c}" />
+                        </apex:panelGrid>
+                		<apex:inputField style="width:60%" value="{!installObj.MATV_Work_Other_Work__c}" label="Other Work" />
+                		<apex:outputPanel >An RF cable and a Network cable were pulled to the iTV Headend. (Mandatory) <apex:inputField value="{!installObj.RF_and_Network_Cable_pulled_iTV_Headend__c}" /></apex:outputPanel>
+                		<apex:inputField style="width:60%"  value="{!installObj.MATV_Work_Performed_Comments__c}" label="MATV Comments" />
+                	</apex:pageBlockSection>
+                	<apex:pageBlockSection title="FTG System" columns="1">
+                		<apex:selectRadio value="{!installObj.FTG_System_Installed__c}">
+                            <apex:selectOptions value="{!yesNoList}" />
+                        </apex:selectRadio>
+                        <apex:selectRadio value="{!installObj.Work_Performed_on_FTG_System__c}">
+                            <apex:selectOptions value="{!yesNoList}" />
+                        </apex:selectRadio>
+                        <apex:outputPanel >FTG Work Performed: (Check all that apply)</apex:outputPanel>
+                        <apex:panelGrid columns="6">
+                        	<apex:outputPanel >Installed New Dish</apex:outputPanel>
+                        	<apex:inputField value="{!installObj.FTG_Work_Installed_New_Dish__c}" />
+                        	<apex:outputPanel >&nbsp;&nbsp;&nbsp;Installed New Headend</apex:outputPanel>
+                        	<apex:inputField value="{!installObj.FTG_Work_Installed_New_Headend__c}" />
+                        	<apex:outputPanel >&nbsp;&nbsp;&nbsp;Installed New Antennas</apex:outputPanel>
+                        	<apex:inputField value="{!installObj.FTG_Work_Installed_New_Antennas__c}" />
+                        	<apex:outputPanel >&nbsp;&nbsp;&nbsp;Reworked Existing Dish</apex:outputPanel>
+                        	<apex:inputField value="{!installObj.FTG_Work_Reworked_Existing_Dish__c}" />
+                        	<apex:outputPanel >&nbsp;&nbsp;&nbsp;Reworked Existing Headend</apex:outputPanel>
+                        	<apex:inputField value="{!installObj.FTG_Work_Reworked_Existing_Headend__c}" />
+                        </apex:panelGrid>
+                		<apex:inputField value="{!installObj.Type_of_FTG_Services_Installed__c}"  />
+                		<apex:inputField style="width:60%" value="{!installObj.Type_Number_of_Satellite_Dishs_Installed__c}" label="Type and Number of Satellite dish(s) installed" />
+                		<apex:inputField style="width:60%" value="{!installObj.FTG_Work_Comments__c}" label="FTG Comments" />
+                	</apex:pageBlockSection>
+                	<apex:pageBlockSection title="iTV System" columns="1"> 
+                		<apex:selectRadio value="{!installObj.iTV_System_Installed__c}">
+                            <apex:selectOptions value="{!yesNoList}" />
+                        </apex:selectRadio>
+                        <apex:selectRadio value="{!installObj.Work_Performed_on_iTV_System__c}">
+                            <apex:selectOptions value="{!yesNoList}" />
+                        </apex:selectRadio>
+                		<apex:inputText value="{!installObj.Type_of_iTV__c}" />
+                		<apex:inputField style="width:60%" value="{!installObj.Other_Type_of_iTV__c}" label="Other(list)" />
+                		<apex:inputField style="width:60%" value="{!installObj.Power_Station_and_Printer_Location__c}" label="Where is Power Station and Printer Located?" />
+                		<apex:inputField style="width:60%" value="{!installObj.Type_and_Number_of_Cables__c}" label="Type and Number of Cables Pulled"/>
+                		<apex:inputField style="width:60%" value="{!installObj.Length_of_Cable__c}" />
+                		<apex:selectRadio value="{!installObj.PMS_ADT_Installed__c}">
+                            <apex:selectOptions value="{!yesNoList}" />
+                        </apex:selectRadio>
+                		<apex:inputField style="width:60%" value="{!installObj.PMS_ADT_Cable_Length__c}" />
+                		<apex:inputField style="width:60%" value="{!installObj.PMS_ADT_Server_Location__c}" />
+                		<apex:inputField style="width:60%" value="{!installObj.iTV_Comments__c}" label="iTV Comments" />
+                	</apex:pageBlockSection>
+                	<apex:pageBlockSection title="Public Viewing" columns="1">
+                		<apex:selectRadio value="{!installObj.Public_Viewing_Work_Performed__c}">
+                            <apex:selectOptions value="{!yesNoList}" />
+                        </apex:selectRadio>
+                		<apex:inputField value="{!installObj.SMATV__c}" />
+                		<apex:inputField value="{!installObj.Receiver_at_TV__c}" />
+                		<apex:inputField style="width:60%" value="{!installObj.Total_Number_of_TVs_Connected__c}" />
+                		<apex:inputField style="width:60%" value="{!installObj.Number_of_Rcvr_at_TVs__c}" />
+                		<apex:inputField style="width:60%" value="{!installObj.Number_of_SMATV_TVs__c}" />
+                	</apex:pageBlockSection>
+                	<apex:pageBlockSection title="TV Installation" columns="1">
+                		<apex:selectRadio value="{!installObj.TV_Installation_Performed__c}">
+                            <apex:selectOptions value="{!yesNoList}" />
+                        </apex:selectRadio>
+                		<apex:inputField style="width:60%" value="{!installObj.Number_of_TVs_Installed__c}" />
+                		<apex:inputField style="width:60%" value="{!installObj.Number_of_TV_Spares__c} "/>
+                	</apex:pageBlockSection>
+                	<apex:pageBlockSection title="BB System" columns="1">
+                		<apex:selectRadio value="{!installObj.BB_Systems_Installed__c}">
+                            <apex:selectOptions value="{!yesNoList}" />
+                        </apex:selectRadio>
+                        <apex:selectRadio value="{!installObj.Work_Performed_on_BB_System__c}">
+                            <apex:selectOptions value="{!yesNoList}" />
+                        </apex:selectRadio>
+                		<apex:inputField style="width:60%" value="{!installObj.Number_of_Guest_Rooms__c}" />
+                		<apex:inputField style="width:60%" value="{!installObj.Number_of_Conference_Rooms__c}"  />
+                		<apex:selectRadio value="{!installObj.VLANs__c}">
+                            <apex:selectOptions value="{!yesNoList}" />
+                        </apex:selectRadio>
+                        <apex:inputText value="{!installObj.VLANs_Pay__c}"  />
+                		<apex:inputField style="width:60%" value="{!installObj.Wireless_Overlay__c}"  />
+                		<apex:inputField style="width:60%" value="{!installObj.Cable_Modems__c}"  />
+                		<apex:inputField style="width:60%" value="{!installObj.DSLAM__c}"  />
+                		<apex:inputField style="width:60%" value="{!installObj.Cat_5_Hard_Wire__c}"  />
+                		<apex:inputField style="width:60%" value="{!installObj.Hot_Spot_Only__c}"  />
+                		<apex:inputField style="width:60%" value="{!installObj.Back_Office_Ports__c}" />
+                		<apex:inputField style="width:60%" value="{!installObj.PMS_Integration__c}" />
+                		<apex:outputPanel >Use this to summarize the technical portion of the installation. Also, record any area(s) of concern about this installation. <br />For example, you should explain any areas that have signal levels below SONIFI specifications, unusual terminal failure rates,<br /> or other issues that may cause problems in the future.</apex:outputPanel>
+                		<apex:inputField style="width:60%" value="{!installObj.BB_System_Comments__c}" label="Comments" />
+                	</apex:pageBlockSection>
+                </apex:pageBlockSection>
+            </div>
+            
+            <!-- ****************************************************************************************************************
+            **********************************************  TV Information    ******************************************************
+            *******************************************************************************************************************-->
+            <div style="page-break-before:always" >    
+                <apex:pageBlockSection columns="1" title="TV Information" rendered="{!tab == 'TV Information' || tab == 'ALL'}" id="TV_INFO">
+                    <apex:repeat value="{!tvList}" var="tv">
+                        <apex:pageBlockSection title="TV Type {!tv.TV_Manufacturer__r.Name}" id="TVSECTION" columns="2">
+                           <apex:pageBlockSectionItem >
+	                        		<apex:outputPanel >TV Manufacturer</apex:outputPanel>
+	                        		<apex:inputText value="{!tv.TV_Manufacturer__r.Name}" style="border-left-color:#ff0000;border-left-width:5px;" />
+	                        </apex:pageBlockSectionItem>
+	                        <apex:pageBlockSectionItem >
+                        		<apex:outputPanel >TV Model</apex:outputPanel>
+                        		<apex:inputText value="{!tv.TV_Model__r.Name}" />
+	                        </apex:pageBlockSectionItem>
+                            <apex:inputField value="{!tv.Chassis__c}" />
+                            <apex:inputField value="{!tv.Year__c}" />
+                            <apex:inputField value="{!tv.Quantity__c}" label="Quantity(Not including spares)"/>
+                            <apex:inputField value="{!tv.Firmware_Version__c}" />
+                            <apex:inputField value="{!tv.Existing_Terminal_Type__c}" label="Terminal Type"/>
+                            <apex:inputField value="{!tv.SONIFI_Remote__c}" label="SONIFI Remote" />
+                            <apex:selectRadio value="{!tv.External_Box_Installed__c}">
+                                <apex:selectOptions value="{!yesNoList}" />
+                            </apex:selectRadio>
+                            <apex:inputText style="display:none" />
+                            <apex:inputField value="{!tv.External_Box_Installed_Make__c}" />
+                            <apex:inputField value="{!tv.External_Box_Installed_Model__c}" />
+                            <apex:selectRadio value="{!tv.Jack_Packs_Installed__c}">
+                                <apex:selectOptions value="{!yesNoList}" />
+                            </apex:selectRadio>
+                            <apex:inputText style="display:none" />
+                            <apex:inputField value="{!tv.Jack_Packs_Installed_Make__c}" />
+                            <apex:inputField value="{!tv.Jack_Packs_Installed_Model__c}" />
+                            <apex:selectRadio value="{!tv.Pillow_Speaker__c}">
+                                <apex:selectOptions value="{!yesNoList}" />
+                            </apex:selectRadio>
+                            <apex:inputText style="display:none" />
+                            <apex:inputText value="{!tv.Pillow_Speaker_Make__c}" label="Pillow Speaker Make"/>
+                            <apex:inputField value="{!tv.Pillow_Speaker_Model__c}" label="Pillow Speaker Model"/>
+                        </apex:pageBlockSection>
+                        <apex:pageBlockSection columns="1" collapsible="false">
+                            <apex:inputField style="width:80%" value="{!tv.Comments__c}" />
+                        </apex:pageBlockSection>
+                    </apex:repeat>
+                    <apex:commandButton styleClass="noPrint" value="Add a TV" action="{!addRowTVInfo}" rerender="pageBody">
+                    	<apex:param value="1" assignTo="{!numRows}"  />
+                    </apex:commandButton>
+                </apex:pageBlockSection>
+            </div>
+            <!-- ****************************************************************************************************************
+            **********************************************  Checklists    ******************************************************
+            *******************************************************************************************************************-->
+            <div style="page-break-before:always" >    
+                <apex:pageBlockSection columns="1" title="Checklists" rendered="{!tab == 'Checklists' || tab == 'ALL'}" id="Checklists">
+                	<apex:repeat value="{!photoGroup2photoMap}" var="group">
+                		<apex:pageBlockSection title="{!group}" columns="1">
+			               	<apex:pageBlockTable value="{!photoGroup2photoMap[group]}" var="photo" columnsWidth="50%,20%">
+			               		<apex:column headerValue="Name of the File">
+			               			<apex:outputText value="{!photo}" />
+			               		</apex:column>
+			               		<apex:column headerValue="Does the photo exist on work order?">
+			               			<apex:selectRadio value="{!photoMap[photo]}" disabled="true">
+		                                <apex:selectOptions value="{!yesNoList}" />
+		                            </apex:selectRadio>
+			               		</apex:column>
+			               	</apex:pageBlockTable>
+		               	</apex:pageBlockSection>
+		            </apex:repeat> 
+	               	<apex:pageBlockSection columns="1" title="Paperwork Checklist">
+	               		<apex:outputPanel ><b>Signature Pages are to be scanned to PDF</b></apex:outputPanel>
+	               		<apex:inputField value="{!installObj.Daily_Status_Reports__c}" />
+	               		<apex:inputField value="{!installObj.Installation_Upgrade_Documentation__c}" />
+	               		<apex:inputField value="{!installObj.Batch_Reports__c}" />
+	               		<apex:inputField value="{!installObj.iTV_BCF__c}" />
+	               		<apex:inputField value="{!installObj.FTG_BCF__c}" />
+	               		<apex:inputField value="{!installObj.BB_BCF__c}" />
+	               		<apex:inputField value="{!installObj.Field_Office_Acceptance_Form__c}" />
+	               		<apex:inputField value="{!installObj.LEC_Shipment_Report_RMA_Number__c}" />
+	               		<apex:inputField value="{!installObj.Channel_Map__c}" />
+	               		<apex:inputField value="{!installObj.Readme_txt_File__c}" />
+	               		<apex:inputField value="{!installObj.Final_Bin_Files_needed_2_Flash_Commander__c}" label="Final Bin File needed to Flash Commander" />
+	               		<apex:inputField value="{!installObj.Drawing_cable_run_Headend_2_PowerStation__c}" label="Drawing of Cable Run Headend to PowerStation"/>
+	               		<apex:inputField value="{!installObj.As_Built_Distribution_Drawings__c}" />
+	               		<apex:inputField value="{!installObj.As_Built_Headend_Drawings__c}" />
+	               		<apex:inputField value="{!installObj.As_Built_Drawings__c}" />
+	               		<apex:inputField value="{!installObj.Baird_Ballast_Form__c}" />
+	               		<apex:inputField value="{!installObj.EdgeQam_Screenshots__c}" />
+	               		<apex:inputField value="{!installObj.Screenshots_of_Technicolor_FTG__c}" />
+	               		<apex:inputField value="{!installObj.EPG_text_doc_file__c}" />
+	               		<apex:inputField value="{!installObj.Built_and_Drawing_Hotel_Floor_Plan__c}" />
+	               		<apex:inputField value="{!installObj.Phone_Room_MDF_IDF_As_Built_and_Drawings__c}" />
+	               		<apex:inputField value="{!installObj.Cabling_Qualification_Results__c}" />
+	               		<apex:pageBlockSection columns="2">
+	               			<apex:pageBlockSection columns="1" title="Broadband Hotel Floor Plan As-Built List">
+	               				<apex:outputPanel >MDF</apex:outputPanel>
+	               				<apex:outputPanel >IDF(s)</apex:outputPanel>
+	               				<apex:outputPanel >Paths of wire pull from the MDF to the IDF(s)</apex:outputPanel>
+	               				<apex:outputPanel >DEMARC to the MDF</apex:outputPanel>
+	               				<apex:outputPanel >IDF or MDF to the rooms</apex:outputPanel>
+	               				<apex:outputPanel >Areas with existing wireless signal levels</apex:outputPanel>
+	               				<apex:outputPanel >iTV equipment location</apex:outputPanel>
+	               				<apex:outputPanel >All elevator locations</apex:outputPanel>
+	               				<apex:outputPanel >Access points locations and distance to switch</apex:outputPanel>
+	               				<apex:outputPanel >Closets(Maid, storage, etc...)</apex:outputPanel>
+	               				<apex:outputPanel >Indicate wall types and thickness</apex:outputPanel>
+	               				<apex:outputPanel >All stairway locations</apex:outputPanel>
+	               				<apex:outputPanel >CAT-5 cable runs(Include distance if run during installation</apex:outputPanel>
+	               			</apex:pageBlockSection>
+	               			<apex:pageBlockSection columns="1" title="Broadband Phone Room/MDF/IDF As-Built List">
+	               				<apex:outputPanel >DEMARC/IP Router</apex:outputPanel>
+	               				<apex:outputPanel >MDF/IDF Rack</apex:outputPanel>
+	               				<apex:outputPanel >Phone Blocks</apex:outputPanel>
+	               				<apex:outputPanel >AC Vent</apex:outputPanel>
+	               				<apex:outputPanel >Electrical Outlets</apex:outputPanel>
+	               				<apex:outputPanel >Conduit Point of Entry</apex:outputPanel>
+	               			</apex:pageBlockSection>
+	               		</apex:pageBlockSection>
+	               	</apex:pageBlockSection>
+	               	<apex:pageBlockSection title="General Completion Checklist" columns="1">
+	               		<apex:pageBlockSectionItem >
+		               		<apex:selectRadio value="{!installObj.Installed_and_working_air_conditioning__c}" >
+	                            <apex:selectOptions value="{!yesNaList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >Air conditioning is installed and working. </apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+	               		<apex:pageBlockSectionItem >
+		               		<apex:selectRadio value="{!installObj.Thermometer_installed_on_Rack_Headend__c}" >
+	                            <apex:selectOptions value="{!yesNaList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >A thermometer is installed on the rack and in the headend room.</apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+	               		<apex:pageBlockSectionItem >
+		               		<apex:selectRadio value="{!installObj.Provide_Room_Temperatures__c}" >
+	                            <apex:selectOptions value="{!yesNaList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >Provide Room Temperatures</apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+	               		<apex:inputField value="{!installObj.High_Reading_Room_Temperature__c}" label="High Reading" />
+	               		<apex:inputField value="{!installObj.Low_Reading_Room_Temperature__c}" label="Low Reading" />
+	               	</apex:pageBlockSection>
+	               	<apex:pageBlockSection title="iTV Completion Checklist" columns="1">
+	               		<apex:pageBlockSectionItem >
+		               		<apex:selectRadio value="{!installObj.PDU_PEC_Configured_and_Working_correctly__c}" >
+	                            <apex:selectOptions value="{!yesNaList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >The PDU/PEC is configured and working correctly</apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+	               		<apex:pageBlockSectionItem >
+		               		<apex:selectRadio value="{!installObj.Sockets_used_on_PDU_101_PCU_101_PDU_CBA__c}" >
+	                            <apex:selectOptions value="{!yesNaList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >Correct sockets were used on the PDU-101/PCU-101 or PDU/CBA</apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+	               		<apex:pageBlockSectionItem >
+		               		<apex:selectRadio value="{!installObj.Cables_Properly_labeled__c}" >
+	                            <apex:selectOptions value="{!yesNaList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >All cables were properly labeled with the yellow ID tags</apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+	               		<apex:pageBlockSectionItem >
+		               		<apex:selectRadio value="{!installObj.Demo_Given_to_Staff_Captioning_Enabled__c}" >
+	                            <apex:selectOptions value="{!yesNaList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >Closed-captioning is enabled on Mute and a demonstration was given to the hotel staff (where applicable)</apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+	               		<apex:pageBlockSectionItem >
+		               		<apex:selectRadio value="{!installObj.X8050_Ingressive_survey_filled_out__c}" >
+	                            <apex:selectOptions value="{!yesNaList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >Ingressive site survey form "8050-Ingressive site survey" was filled out and left in rack.</apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+	               		<apex:pageBlockSectionItem >
+		               		<apex:selectRadio value="{!installObj.DCR_encryption_keys_w_TechConnection__c}" >
+	                            <apex:selectOptions value="{!yesNaList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >The DCR encryption keys were verified with TechConnection</apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+	               		<apex:inputField value="{!installObj.Encryption_keys_verified_by__c}" />
+	               		<apex:pageBlockSectionItem >
+		               		<apex:selectRadio value="{!installObj.FTG_remote_access_connected_and_tested__c}" >
+	                            <apex:selectOptions value="{!yesNaList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >FTG remote access connected and tested (only on LNET and FTG using Technicolor equipment)</apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+	               		<apex:pageBlockSectionItem >
+		               		<apex:selectRadio value="{!installObj.Amp_headstones_filled_and_placed_on_Amps__c}" >
+	                            <apex:selectOptions value="{!yesNaList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >The amplifier Headstones were filled out and placed on the amplifiers</apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+	               		<apex:pageBlockSectionItem >
+		               		<apex:selectRadio value="{!installObj.GM_signed_the_tax_rate_form__c}" >
+	                            <apex:selectOptions value="{!yesNaList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >The general manager has signed the tax rate form</apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+	               		<apex:pageBlockSectionItem >
+		               		<apex:selectRadio value="{!installObj.Copy_of_BF_2_installation_bcf_sonifi_com__c}" >
+	                            <apex:selectOptions value="{!yesNaList}" />
+	                        </apex:selectRadio> 
+	                        <apex:outputPanel >Copy of the Billing forms emailed to installation-bcf@sonifi.com</apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+	               	</apex:pageBlockSection>
+	               	<apex:pageBlockSection title="Broadband Completion Checklist" columns="1">
+	               		<apex:pageBlockSectionItem >
+		               		<apex:selectRadio value="{!installObj.Rack_Grounded__c}" >
+	                            <apex:selectOptions value="{!yesNaList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >Is the rack grounded? See TOD# 3001 for specifications</apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+	               		<apex:pageBlockSectionItem >
+		               		<apex:selectRadio value="{!installObj.Record_Rack_Room_Dimensions_4_expansion__c}" >
+	                            <apex:selectOptions value="{!yesNaList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >Record the rack room dimensions for possible future expansion (L x W x H)</apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+	               		<apex:pageBlockSectionItem >
+		               		<apex:selectRadio value="{!installObj.Correct_AC_outlets_used_on_RPM__c}" >
+	                            <apex:selectOptions value="{!yesNaList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >Are the connect AC outlet(s) being used on the Remote Power Manager?</apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+	               		<apex:pageBlockSectionItem >
+		               		<apex:selectRadio value="{!installObj.Access_Points_mounted_secured_properly__c}" >
+	                            <apex:selectOptions value="{!yesNaList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >Are the access points mounted and secured properly?</apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+	               		<apex:pageBlockSectionItem >
+		               		<apex:selectRadio value="{!installObj.Access_Points_Properly_Labeled__c}" >
+	                            <apex:selectOptions value="{!yesNaList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >Are all the access points properly labeled?</apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+	               		<apex:pageBlockSectionItem >
+		               		<apex:selectRadio value="{!installObj.Switches_Properly_Labeled__c}" >
+	                            <apex:selectOptions value="{!yesNaList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >Are all the switches properly labeled?</apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+	               		<apex:pageBlockSectionItem >
+		               		<apex:selectRadio value="{!installObj.Hotel_Receive_Login_training__c}" >
+	                            <apex:selectOptions value="{!yesNaList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >Did the hotel receive login / training for setting up access codes?</apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+	               		<apex:pageBlockSectionItem >
+		               		<apex:selectRadio value="{!installObj.PMS_Integration_Requested_from_the_hotel__c}" >
+	                            <apex:selectOptions value="{!yesNaList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >Was PMS integration requested from the hotel?</apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+	               		<apex:pageBlockSectionItem >
+		               		<apex:selectRadio value="{!installObj.PMS_tested_confirmed_posting_on_folio__c}" >
+	                            <apex:selectOptions value="{!yesNaList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >Was the PMS tested and confirmed to be posting on the folio?</apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+	               		<apex:pageBlockSectionItem >
+		               		<apex:selectRadio value="{!installObj.Billing_System_activated_and_tested__c}" >
+	                            <apex:selectOptions value="{!yesNaList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >Was the third party vendors billing system activated and tested?</apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+	               		<apex:pageBlockSectionItem >
+		               		<apex:selectRadio value="{!installObj.Field_Service_Received_a_walk_through__c}" >
+	                            <apex:selectOptions value="{!yesNaList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >Has Field Service received a walk through?</apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+	               		<apex:pageBlockSectionItem >
+		               		<apex:selectRadio value="{!installObj.Cable_Devices_dressed_labeled__c}" >
+	                            <apex:selectOptions value="{!yesNaList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >Are all cables/devices dressed and labeled per installation guide?</apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+	            	</apex:pageBlockSection>
+	        	</apex:pageBlockSection>
+            </div>
+            
+            <!-- ****************************************************************************************************************
+            **********************************************  BB Building Construction    ******************************************************
+            *******************************************************************************************************************-->
+            <div style="page-break-before:always" >    
+                <apex:pageBlockSection columns="1" title="BB Building Construction" rendered="{!tab == 'BB Building Construction' || tab == 'ALL'}" id="BUILDING">
+                	<apex:repeat value="{!buildingList}" var="build"> 
+                		<apex:pageBlockSection title="Building - {!build.Name}" columns="1">
+                			<apex:inputField value="{!build.Name}" />
+                			<apex:inputField style="width:80%" value="{!build.Notes__c}" label="Description" />
+                			<apex:pageBlockSection columns="2">
+	                			<apex:inputField value="{!build.Number_of_Floors__c}" label="Floors" />
+	                			<apex:inputField value="{!build.Number_of_Rooms_per_Floor__c}" label="Number of Rooms per Floor" />
+	                			<apex:inputText value="{!build.Interior_Wall_Construction__c}" />
+	                			<apex:inputField value="{!build.Thickness_of_Interior_Wall_Construction__c}" />
+	                			<apex:inputText value="{!build.Hallway_Wall_Construction__c}" />
+	                			<apex:inputField value="{!build.Thickness_of_Hallway_Wall_Construction__c}" />
+	                			<apex:inputText value="{!build.Exterior_Wall_Construction__c}" />
+	                			<apex:inputField value="{!build.Thickness_of_Exterior_Wall_Construction__c}" />
+	                			<apex:inputText value="{!build.Ceiling_Type_Upper_Floors__c}" />
+	                			<apex:inputField value="{!build.Thickness_of_Ceiling_Construction__c}" />
+	                			<apex:inputText value="{!build.Firewall_Construction__c}" />
+	                			<apex:inputField value="{!build.Thickness_of_Firewall_Construction__c}" />
+	                			<apex:pageBlockSectionItem >
+	                				<apex:outputPanel >Hallway Ceiling Type-Sofits</apex:outputPanel>
+				               		<apex:selectRadio value="{!build.Hallway_Ceiling_Sofits__c}" >
+			                            <apex:selectOptions value="{!yesNoList}" />
+			                        </apex:selectRadio>
+			                    </apex:pageBlockSectionItem>
+			                    <apex:inputField value="{!build.Hallway_Ceiling_Sofits_Locations__c}" />
+			                    <apex:pageBlockSectionItem >
+			                    	<apex:outputPanel >Hallway Ceiling-False Ceiling</apex:outputPanel>
+				               		<apex:selectRadio value="{!build.Hallway_Ceiling_False_Ceiling__c}" >
+			                            <apex:selectOptions value="{!yesNoList}" />
+			                        </apex:selectRadio>
+			                    </apex:pageBlockSectionItem>
+			                    <apex:inputField value="{!build.Hallway_Ceiling_False_Ceiling_Locations__c}" />
+			            	</apex:pageBlockSection>
+                		</apex:pageBlockSection>
+                		<apex:pageBlockSection columns="1" collapsible="false">
+                			<apex:panelGrid columns="3">
+                				<apex:outputPanel >Building Dimensions&nbsp;&nbsp;</apex:outputPanel>
+                				<apex:outputPanel >&nbsp;&nbsp;&nbsp;LxWxH&nbsp;</apex:outputPanel>
+                				<apex:inputField value="{!build.LxWxH__c}"></apex:inputField>
+                			</apex:panelGrid>
+                		</apex:pageBlockSection>
+                	</apex:repeat>
+                	<apex:commandButton styleClass="noPrint" value="Add Building" action="{!addRowBuilding}" rerender="pageBody" >
+                		<apex:param value="1" assignTo="{!numRows}"  />
+                	</apex:commandButton>
+                </apex:pageBlockSection>
+           </div> 
+
+			 <!-- ****************************************************************************************************************
+            **********************************************  UTR    ******************************************************
+            *******************************************************************************************************************-->
+            <div style="page-break-before:always" >   
+                <apex:pageBlockSection columns="1" title="Unfinished Task Report" rendered="{!tab == 'UTR' || tab == 'ALL'}" id="UTR">
+                	<apex:outputField value="{!acc.Name}" />
+                    <apex:outputField value="{!acc.Physical_Street_Address_Line_1__c}" label="Address" />
+                    <apex:pageBlockSectionItem >
+                   		<apex:outputText value="City, State, Zip" />
+                   		<apex:outputText >{!acc.Physical_City__c} {!acc.Physical_State__c}, {!acc.Physical_Postal_Code__c}</apex:outputText>
+                    </apex:pageBlockSectionItem>
+                	<apex:outputPanel >List in detail a plan or scope of work (SOW) to get the unfinished tasks report (UTR) completed.</apex:outputPanel>
+                	<apex:outputPanel >List who is responsible for completing the unfinished tasks, customer, vendor, electrician, other, etc</apex:outputPanel>
+                	<apex:outputPanel >Describe the plan on who will follow up on the unfinished tasks by a specific date or time frame</apex:outputPanel>
+                	<apex:pageBlockTable value="{!taskList}" var="utr">
+                		<apex:column >
+                			<apex:facet name="header"> Subject</apex:facet>
+                			<apex:inputText value="{!utr.Subject}" style="width:80px"/>
+                		</apex:column>
+                		<apex:column style="width:100px" >
+                			<apex:facet name="header">Description and<br /> Resolution of <br />Unfinished Tasks</apex:facet>
+                			<apex:inputText value="{!utr.Description}" style="width:200px"/>
+                		</apex:column>
+                		<apex:column >
+                			<apex:facet name="header">Contact</apex:facet>
+                			<apex:inputText value="{!utr.WhoId}" style="width:80px"/>
+                		</apex:column>
+                		<apex:column >
+                			<apex:facet name="header">Responsible Party</apex:facet>
+                			<apex:inputText value="{!utr.Responsible_Party__c}" style="width:80px"/>
+                		</apex:column>
+                		<apex:column >
+                			<apex:facet name="header">Status</apex:facet>
+                			<apex:inputText value="{!utr.Status}" required="false" style="width:80px"/>
+                		</apex:column>
+                		<apex:column >
+                			<apex:facet name="header">Owner</apex:facet>
+                			<apex:outputText value="{!utr.Owner.Name}" style="width:80px"/>
+                		</apex:column>
+                		<apex:column >
+                			<apex:facet name="header">Estimated Completion</apex:facet>
+                			<apex:inputField value="{!utr.activityDate}" style="width:80px"/>
+                		</apex:column>
+                	</apex:pageBlockTable>
+                	<apex:commandButton styleClass="noPrint" value="Add a Task" action="{!addRowTask}" rerender="pageBody">
+                		<apex:param value="1" assignTo="{!numRows}"  />
+                	</apex:commandButton>
+                	<apex:pageBlockSectionItem >
+                        <apex:outputText value="Customer Signature, Title and Date" />
+                        <apex:outputText value="______________________________________________________________________________" />
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                        <apex:outputText value="Installation Tech Signature, Title and Date" />
+                        <apex:outputText value="______________________________________________________________________________" />
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                        <apex:outputText value="Field Service Tech Signature, Title and Date" />
+                        <apex:outputText value="______________________________________________________________________________" />
+                    </apex:pageBlockSectionItem>
+                </apex:pageBlockSection>
+            </div>   
+           
+            <!-- ****************************************************************************************************************
+            **********************************************  FSD Sign-Off    ******************************************************
+            *******************************************************************************************************************-->
+            <div style="page-break-before:always" >    
+                <apex:pageBlockSection columns="1" title="FSD Sign-Off" rendered="{!tab == 'FSD Sign-Off' || tab == 'ALL'}" id="FSD_Sign_Off">
+                	<apex:outputPanel >A signature below indicates that the Field Office manager or authorized Field Service Technician has inspected the installation and verified that it is acceptable.<br /> Any exceptions or incomplete work as described below is agreed to, and a completed copy of the installation paperwork has been received.</apex:outputPanel>
+                	<apex:panelGrid columns="11">
+                		<apex:outputPanel >Systems Installed and Inspected: &nbsp;&nbsp;&nbsp; </apex:outputPanel>
+                		<apex:inputCheckBox label="iTV" />
+                		<apex:outputPanel >iTV&nbsp;&nbsp;&nbsp;&nbsp;</apex:outputPanel>
+                		<apex:inputCheckBox label="Free-To-Guest" />
+                		<apex:outputPanel >Free-To-Guest&nbsp;&nbsp;&nbsp;&nbsp;</apex:outputPanel>
+                		<apex:inputCheckBox label="MATV" />
+                		<apex:outputPanel >MATV&nbsp;&nbsp;&nbsp;&nbsp;</apex:outputPanel>
+                		<apex:inputCheckBox label="Broadband" />
+                		<apex:outputPanel >Broadband&nbsp;&nbsp;&nbsp;&nbsp;</apex:outputPanel>
+                		<apex:inputCheckBox label="Public Viewing" />
+                		<apex:outputPanel >Public Viewing</apex:outputPanel>
+                	</apex:panelGrid>
+                    <apex:outputPanel ><h3> Field Office Comments: </h3></apex:outputPanel>   
+                    <apex:inputTextArea value="{!installObj.Field_Office_Comments__c}" rows="15" style="width:80%" />
+                    <apex:pageBlockSectionItem >
+                        <apex:outputText value="Date" />
+                        <apex:outputText value="____________________________________________________________" />
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                        <apex:outputText value="Site Number and Property Name " />
+                        <apex:outputText value="{!acc.Name}" />
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                        <apex:outputText value="Field Office Number" />
+                        <apex:outputText value="____________________________________________________________" />
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                        <apex:outputText value="Field Service Technician/Manager Name" />
+                        <apex:outputText value="____________________________________________________________" />
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                        <apex:outputText value="Field Service Technician/Manager Signature" />
+                        <apex:outputText value="____________________________________________________________" />
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                        <apex:outputText value="Installation Technician Name" />
+                        <apex:outputText value="____________________________________________________________" />
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                        <apex:outputText value="Installation Technician Signature" />
+                        <apex:outputText value="____________________________________________________________" />
+                    </apex:pageBlockSectionItem>
+                 </apex:pageBlockSection>
+            </div>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>

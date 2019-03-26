@@ -1,0 +1,44 @@
+<apex:page standardcontroller="Work_Order__c" recordSetVar="workOrders" extensions="WorkOrderRelatedCreationExtension" cache="false" docType="html-5.0">
+
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
+    <script src="{!URLFOR($Resource.CustomResources, 'fancytree/src/jquery.fancytree.js')}" type="text/javascript"></script>
+    <script src="{!URLFOR($Resource.CustomResources, 'fancytree/src/jquery.fancytree.table.js')}" type="text/javascript"></script>
+    <link href="{!URLFOR($Resource.CustomResources, 'fancytree/src/skin-lion/ui.fancytree.css')}" rel="stylesheet" type="text/css"></link>
+    <link href="{!URLFOR($Resource.CustomResources, 'jquery-ui-1.8.7.custom.css')}" rel="stylesheet" type="text/css"></link>
+
+    <script type="text/javascript">
+        j$ = jQuery.noConflict();
+
+    </script>
+
+    <apex:form id="pageForm">
+
+            <apex:pageBlock id="workOrderTypesPageBlock" mode="maindetail">
+                <apex:pageMessages id="pageMessages" showDetail="true" escape="false" />
+                <apex:pageBlockButtons location="top">
+                        <apex:commandButton action="{!saveRelatedWorkOrders}" value="Save Work Order(s)" />
+                        <apex:commandButton action="{!cancel}" value="Cancel" />                        
+                </apex:pageBlockButtons>
+                <apex:outputPanel id="redirectPanel" layout="block">
+                </apex:outputPanel>
+            </apex:pageBlock>
+            <apex:pageBlock id="recordTypeSelection">
+            	<apex:outputText rendered="{!hasCircuit || hasCustomization}">No customization (or circuit) line items are found</apex:outputText>
+                <div>
+                    <apex:pageBlockSection title="Select Work Order Record Types" columns="1" collapsible="false">
+                            <apex:repeat value="{!WorkOrderTypes}" var="recordType" > 
+                            	<apex:pageBlockSectionItem >
+	                            	<apex:inputCheckbox value="{!recordType.checked}"/>
+	                            	<apex:outputText value="{!recordType.name}" />
+                            	</apex:pageBlockSectionItem>
+                            </apex:repeat>
+                    </apex:pageBlockSection>
+                </div>
+            </apex:pageBlock>
+            
+    </apex:form>
+    <script>
+        setFocus = function() { return; }
+    </script>
+</apex:page>

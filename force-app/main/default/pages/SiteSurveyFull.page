@@ -1,0 +1,2029 @@
+<!-- *********************************************************************************************
+// Version:      0.0.1
+// Author:       Etherios
+// Date Created: 06/10/2013
+// Description:  Class for housing custom logic for the Opportunity object
+//    
+// Copyright 2013 Etherios All rights reserved. Customer confidential. Do not distribute.
+// *********************************************************************************************
+// ********************************************************************************************* --> 
+ 
+<apex:page standardController="Site_Survey__c" extensions="SiteSurveyExtension" wizard="true" showheader="true" sidebar="false" title="Site Survey"> 
+    <head>
+        <style type="text/css" media="print">
+            .noPrint 
+            {
+                display:none;
+            }
+        </style>
+        <script type="text/javascript" >
+            function printScreen()
+	        { 
+	            window.print();
+	        }
+	        function downloadFile()
+	        { 
+	             
+	            window.open("{!otherForms}");
+	        }
+        </script>
+    </head>
+    <apex:form > 
+        <apex:pageBlock id="pageBody" title="Full Site Survey" >
+            <apex:pageMessages />
+            <div class="noPrint">
+            	<apex:pageblock >
+            		<apex:pageBlockButtons >
+            			<apex:commandButton value="Add Rows" action="{!addRowHeaders}" rerender="pageBody" />
+            			<apex:commandLink styleclass="btn" style="text-decoration:none;padding:4px;" target="_top" value="Download Other Forms"  onclick="downloadFile();" />
+            			<apex:commandButton value="Print" onclick="printScreen();" />
+	            		<apex:commandButton value="Back" action="{!cancel}" />
+            		</apex:pageBlockButtons>
+		            <apex:pageBlockSection id="HEADER" rendered="{!tab =='ALL'}" title="Enter additional number of rows to each list" >
+					    <apex:inputText value="{!headerContact}" label="Number of Additional Contacts" />
+					    <apex:inputText value="{!headerBuilding}" label="Number of Additional Buildings" />
+		            	<apex:inputText value="{!headerIDF}" label="Number of Additional IDFs to all buildings" />
+		            	<apex:inputText value="{!headerCable}" label="Number of Additional Cable Types to IDFs" />
+		            	<apex:inputText value="{!headerPassive}" label="Number of Additional Passive Device to IDFs" />
+		            	<apex:inputText value="{!headerBBIDF}" label="Number of Additional BB IDFs" />
+		            	<apex:inputText value="{!headerBBMDF}" label="Number of Additional BB MDFs" />
+		            	<apex:inputText value="{!headerPrivateTv}" label="Number of Additional Guest/Patient TVs" />
+		            	<apex:inputText value="{!headerLocation}" label="Number of Additional Public Locations" />
+		            	<apex:inputText value="{!headerPublicTv}" label="Number of Additional TVs to Locations" />
+		            	<apex:inputText value="{!headerRack}" label="Number of Additional Rack Locations" />
+		            	<apex:inputText value="{!headerDigital}" label="Number of Additional Digital Off Air" />
+		            </apex:pageBlockSection>
+	            </apex:pageblock>
+            </div>
+            <!-- ****************************************************************************************************************
+            **********************************************  Cover sheet    ******************************************************
+            *******************************************************************************************************************-->
+            <apex:pageBlockSection title="Cover Sheet" >
+                <apex:outputField label="Site Name" value="{!siteObject.Account_Name__c}" />
+                <apex:outputField value="{!siteObject.Site_ID__c}" styleClass="noPrint"/>
+                <apex:outputField value="{!siteObject.Address__c}" />
+                <apex:outputField value="{!siteObject.CreatedById}" />    
+            </apex:pageBlockSection>
+            <apex:pageBlockSection columns="1" collapsible="false">
+                <apex:outputText value="Comment Box 1" />
+                <apex:inputField style="width:85%" value="{!siteObject.Main_Comment_Box_1__c}" label="" />
+                <apex:outputText value="Comment Box 2" />
+                <apex:inputField style="width:85%" value="{!siteObject.Main_Comment_Box_2__c}" label="" />
+                <apex:outputText value="Comment Box 3" />
+                <apex:inputField style="width:85%" value="{!siteObject.Main_Comment_Box_3__c}" label="" />
+            </apex:pageBlockSection>
+            <!-- ****************************************************************************************************************
+            **********************************************  Property Info    ************************************************
+            *******************************************************************************************************************-->
+            <div  style="page-break-before:always" >
+                <apex:pageBlockSection columns="1" title="Property Information" >
+                    <apex:pageBlockSection columns="2" collapsible="false" >
+                        <apex:outputField value="{!siteObject.Account_Name__c}" />
+                        <apex:outputField value="{!siteObject.Address__c}" />
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection title="General Info" columns="1">    
+                        <apex:pageBlockSection columns="2">    
+	                        <apex:outputField value="{!siteObject.Site__r.Phone}"/>
+	                        <apex:outputField value="{!siteObject.Site__r.Fax}"/>
+                     	</apex:pageBlockSection>
+                     	<apex:pageBlockSection columns="1">
+	                        <apex:outputPanel >Number of Rooms/Beds <apex:inputField value="{!siteObject.Number_of_Rooms__c}" label=""/> </apex:outputPanel>          
+	                        <apex:outputPanel >Total Number of Suites/Semi-Private(2TVs/room) <apex:inputField value="{!siteObject.Total_number_of_Suites_2_TVs_room__c}" label="" /></apex:outputPanel>
+	                        <apex:outputPanel >Total Number of Suites/Semi-Private(3TVs/room) <apex:inputField value="{!siteObject.Total_Number_of_Suites_3_TVs_room__c}" label="" /></apex:outputPanel>
+	                        <apex:outputPanel >Total Number of Suites/Semi-Private(4TVs/room) <apex:inputField value="{!siteObject.Total_Number_of_Suites_4_TVs_room__c}" label="" /></apex:outputPanel>
+	                        <apex:outputPanel >Total # of TVs <apex:inputField value="{!siteObject.Number_of_TVs__c}" label="" /></apex:outputPanel>
+                        </apex:pageBlockSection>
+                        <apex:pageBlockSection columns="2">
+	                        <apex:pageBlockSectionItem >
+		                        <apex:selectRadio value="{!siteObject.New_Construction__c}" style="padding-left:50px">
+		                            <apex:selectOptions value="{!yesNoList}" />
+		                        </apex:selectRadio>
+		                        <apex:outputPanel >New Construction</apex:outputPanel>
+		                    </apex:pageBlockSectionItem>
+	                        <apex:inputField value="{!siteObject.Estimated_Opening_Date__c}" />
+	                        <apex:pageBlockSectionItem >
+		                        <apex:selectRadio value="{!siteObject.Renovation_Planned__c}" style="padding-left:50px">
+		                            <apex:selectOptions value="{!yesNoList}" />
+		                        </apex:selectRadio>
+		                        <apex:outputPanel >Renovation Planned</apex:outputPanel>
+		                    </apex:pageBlockSectionItem>
+	                        <apex:inputField value="{!siteObject.Estimated_Completion_Date__c}" />
+	                     </apex:pageBlockSection>
+	                     <apex:pageBlockSection columns="1" collapsible="false">
+	                        <apex:outputPanel >What Areas and What is Scope of Renovation/ Construction<div style="clear:both"></div><apex:inputTextArea style="width:75%" value="{!siteObject.What_Areas_and_What_is_Scope__c}" /></apex:outputPanel>
+	                        <apex:inputField style="width:75%" value="{!siteObject.Construction_Company__c}" />
+	                     </apex:pageBlockSection>
+	                     <apex:pageBlockSection columns="2" collapsible="false"> 
+	                        <apex:inputField value="{!siteObject.Construction_POC__c}" />
+	                        <apex:inputField value="{!siteObject.Construction_POC_Phone__c}" />
+	                        <apex:inputField value="{!siteObject.Owners_Rep__c}" />
+	                        <apex:inputField value="{!siteObject.Owners_Rep_Phone__c}" />
+	                    </apex:pageBlockSection>
+	                </apex:pageBlockSection>
+                    <apex:pageBlockSection columns="2" title="Staff Information">
+                        <apex:repeat value="{!contactList}" var="con" >
+                            <apex:pageBlockSectionItem >
+                                <apex:outputField value="{!con.Role__c}" />
+                                <apex:outputField value="{!con.Name}" />
+                            </apex:pageBlockSectionItem>
+                            <apex:outputField value="{!con.Email}" />
+                        </apex:repeat>
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection columns="2" title="Interface Information">
+                        <apex:pageBlockSectionItem >
+                            <apex:selectRadio value="{!siteObject.Interface_iTV_and_Property_PMS_System__c}" style="padding-left:50px">
+                                <apex:selectOptions value="{!yesNoList}" />
+                            </apex:selectRadio>
+                            <apex:outputText value="Is there an interface between an iTV Vendor and the property's PMS System" />
+                        </apex:pageBlockSectionItem>
+                        <apex:pageBlockSectionItem >
+                            <apex:selectRadio value="{!siteObject.ADT_System_in_Use__c}" style="padding-left:50px">
+                                <apex:selectOptions value="{!yesNoList}" />
+                            </apex:selectRadio>
+                            <apex:outputText value="Is there an ADT (Admit, Discharge, Transfer) System in use?" />
+                        </apex:pageBlockSectionItem>
+                        <apex:inputField value="{!siteObject.Software_Vendor_Name__c}" />
+                        <apex:inputField value="{!siteObject.Software_Vendor_Phone__c}" />
+                        <apex:inputField value="{!siteObject.Onsite_PMS_ADT_Contact__c}" />
+                        <apex:inputTextArea style="width:85%"  value="{!siteObject.Describe_Data_Cable_Routing_Location__c}" />
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection columns="1" title="PC Admin Menu Access Information">
+                       <apex:outputPanel >Describe the location of the hotel's network (LAN) interface</apex:outputPanel>
+                        <apex:inputTextArea style="width:80%" value="{!siteObject.Location_of_Hotel_s_Network_Interface__c}" label="" />
+                        <apex:pageBlockSectionItem >
+                        	<apex:selectRadio value="{!siteObject.CAT5_Cable_be_Pulled__c}" style="padding-left:50px">
+                                <apex:selectOptions value="{!yesNoList}" />
+                            </apex:selectRadio>  
+                            <apex:outputText value="Will CAT5 cable need to be pulled?" />
+                        </apex:pageBlockSectionItem>
+                        <apex:outputPanel >If yes, explain the best possible solution and estimate the distance to the hotel's network (LAN) interface from the SONIFI rack location.<div style="clear:both"></div><apex:inputTextArea style="width:80%" value="{!siteObject.CAT5_Cable_Pull_Solution__c}" label=""/></apex:outputPanel>
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection title="Hospitality Property Type Information" columns="1">
+                    	<apex:pageBlockSectionItem >
+                    		<apex:selectRadio value="{!siteObject.Portions_Used_as_Rental_Condo_Timeshares__c}" style="padding-left:50px">
+	                            <apex:selectOptions value="{!yesNoList}" />
+	                        </apex:selectRadio>
+                        	<apex:outputText value="Are there any portions of the property used as rentals, condos, or timeshare units?" />
+                    	</apex:pageBlockSectionItem>
+                        <apex:outputPanel >If yes, describe the rental arrangements, room numbers, and unit locations below</apex:outputPanel>
+                        <apex:inputTextArea style="width:80%" value="{!siteObject.Describe_Rental_Arrangements_Room_Num__c}" label="" />
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection title="Free-To-Guest(FTG) Information" columns="2">
+                        <apex:inputText value="{!siteObject.FTG_Type__c}" />
+                        <apex:inputText style="display:none" />
+                        <apex:inputText value="{!siteObject.Cable_Signal_Type__c}"/>
+                        <apex:inputField value="{!siteObject.Company_Services_MATV_Sytem__c}" />
+                        <apex:inputField value="{!siteObject.FTG_Vendor_Contact__c}" />
+                        <apex:inputField value="{!siteObject.MATV_Vendor_Contact__c}" />
+                        <apex:inputField value="{!siteObject.FTG_Vendor_Phone__c}" />
+                        <apex:inputField value="{!siteObject.MATV_Vendor_Phone__c}" />
+                        <apex:pageBlockSectionItem >
+                            <apex:selectRadio value="{!siteObject.FTG_Vendor_Provide_HD_Contact_at_Site__c}" style="padding-left:50px">
+                                <apex:selectOptions value="{!yesNoList}" />
+                            </apex:selectRadio>
+                            <apex:outputText value="FTG Vendor Provides HD Content at Site" />
+                        </apex:pageBlockSectionItem>
+                     </apex:pageBlockSection>
+                     <apex:pageBlockSection columns="1" collapsible="false">
+                        <apex:inputTextArea style="width:85%"  value="{!siteObject.Describe_HD_Equip_at_the_Site__c}" />
+                        <apex:inputTextArea style="width:85%"  value="{!siteObject.FTG_Comments__c}" />
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection columns="2" title="High Speed Internet Information">
+                        <apex:pageBlockSectionItem >
+                            <apex:selectRadio value="{!siteObject.Existing_High_Speed_Internet_Provider__c}" style="padding-left:50px">
+                                <apex:selectOptions value="{!yesNoList}" />
+                            </apex:selectRadio>
+                            <apex:outputText value="Is there an existing High Speed Internet Provider?" />
+                        </apex:pageBlockSectionItem>
+                        <apex:inputText value="{!siteObject.Type_of_High_Speed_Internet_Provider__c}" label="If yes, What Type?" />
+                        <apex:inputField value="{!siteObject.Circuit_Vendor_Name__c}" />
+                        <apex:inputField value="{!siteObject.Circuit_Vendor_Phone__c}" />
+                        <apex:inputField value="{!siteObject.Service_Vendor_Contact__c}" />
+                        <apex:inputField value="{!siteObject.Service_Vendor_Phone__c}" />
+                        <apex:inputField value="{!siteObject.Frequencies_Used_for_Modem_Site__c}" />
+                        <apex:inputTextArea style="width:70%"  value="{!siteObject.High_Speed_Internet_Comments__c}" label="Comments" />
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection columns="1" title="Equipment/Shipping Equipment">
+                        <apex:inputField style="width:85%" value="{!siteObject.Shipping_and_Receiving_Contact__c}" />
+                        <apex:inputTextArea style="width:85%" value="{!siteObject.Special_Shipping_Instructions__c}" />
+                        <apex:pageBlockSection columns="2">
+	                        <apex:pageBlockSectionItem >
+		                        <apex:selectRadio value="{!siteObject.Lift_Gate_Required_for_Returning_Equip__c}" style="padding-left:50px">
+		                            <apex:selectOptions value="{!yesNoList}" />
+		                        </apex:selectRadio>
+		                        <apex:outputPanel >Lift Gate Required for Returning Equipment</apex:outputPanel>
+		                    </apex:pageBlockSectionItem> 
+	                        <apex:pageBlockSectionItem >
+		                        <apex:selectRadio value="{!siteObject.Loading_Dock_Available__c}" style="padding-left:50px">
+		                            <apex:selectOptions value="{!yesNoList}" />
+		                        </apex:selectRadio>
+		                        <apex:outputPanel >Loading Dock Available</apex:outputPanel>
+		                    </apex:pageBlockSectionItem>
+	                    </apex:pageBlockSection>
+                        <apex:inputTextArea style="width:85%" value="{!siteObject.Loading_Comments__c}" label="Loading Comments" />
+                        <apex:pageBlockSectionItem >
+	                        <apex:selectRadio value="{!siteObject.Storage_Space_Available_for_Equipment__c}" style="padding-left:50px">
+	                            <apex:selectOptions value="{!yesNoList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >Secure Storage Space Available for Equipment</apex:outputPanel>
+	                    </apex:pageBlockSectionItem>
+                        <apex:inputTextArea style="width:85%" value="{!siteObject.Storage_Space_Comments__c}" label=" Storage Space Comments" />
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection columns="1" title="iTV Vendor Information" >
+                    	<apex:pageBlockSection columns="2">
+	                        <apex:outputPanel ><h3>List the current iTV Vendor or Tape Rental Vendor information below:</h3></apex:outputPanel>
+	                        <apex:inputText style="display:none" />
+	                        <apex:inputField value="{!siteObject.iTV_Vendor_Name__c}" />
+	                        <apex:inputField value="{!siteObject.iTV_Vendor_Phone__c}" />
+	                        <apex:inputField style="width:80%" value="{!siteObject.Forward_and_Return_Frequencies__c}" />
+	                    </apex:pageBlockSection>
+	                    <apex:pageBlockSection columns="1">
+	                        <apex:pageBlockSectionItem >
+	                            <apex:selectRadio value="{!siteObject.Other_Systems_Onsite__c}" style="padding-left:50px">
+	                                <apex:selectOptions value="{!yesNoList}" />
+	                            </apex:selectRadio>
+	                            <apex:outputText value="Are there any other systems onsite(i.e. tape rental, Robobar, HVAC, etc.)?" />
+	                        </apex:pageBlockSectionItem>
+	                    </apex:pageBlockSection>
+	                    <apex:pageBlockSection columns="2">
+	                        <apex:outputPanel ><h3>If Yes, provide the vendor information below.</h3></apex:outputPanel>
+	                        <apex:inputText style="display:none" />
+	                        <apex:inputField value="{!siteObject.Onsite_Vendor_Name_1__c}" />
+	                        <apex:inputField value="{!siteObject.Onsite_Vendor_Phone_1__c}" />
+	                        <apex:inputField value="{!siteObject.Onsite_Vendor_Name_2__c}" />
+	                        <apex:inputField value="{!siteObject.Onsite_Vendor_Phone_2__c}" />
+	                        <apex:inputField value="{!siteObject.Onsite_Forward_and_Return_Frequencies__c}" />
+	                        <apex:inputText style="display:none" />
+	                        <apex:inputField value="{!siteObject.Existing_HAT_Location_1__c}" />
+	                        <apex:inputField value="{!siteObject.Proposed_HAT_Location_1__c}" />
+	                        <apex:inputField value="{!siteObject.Existing_HAT_Location_2__c}" />
+	                        <apex:inputField value="{!siteObject.Proposed_HAT_Location_2__c}" />
+	                        <apex:inputField value="{!siteObject.Existing_HAT_Location_3__c}" />
+	                        <apex:inputField value="{!siteObject.Proposed_HAT_Location_3__c}" />
+                    	</apex:pageBlockSection>
+                    	<apex:pageBlockSection columns="1" collapsible="false">
+	                    	<apex:outputPanel >Describe the proposed HAT #1 Data cable routing and distance</apex:outputPanel>
+	                        <apex:inputTextArea style="width:85%" value="{!siteObject.Describe_Proposed_HAT_1__c}" label=""/>
+	                        <apex:outputPanel >Describe the proposed HAT #2 Data cable routing and distance</apex:outputPanel>
+	                        <apex:inputTextArea style="width:85%" value="{!siteObject.Describe_Proposed_HAT_2__c}" label=""/>
+	                        <apex:outputPanel >Describe the proposed HAT #3 Data cable routing and distance</apex:outputPanel>
+	                        <apex:inputTextArea style="width:85%" value="{!siteObject.Describe_Proposed_HAT_3__c}" label=""/>
+	                        <apex:outputPanel >iTV Vendor Comments</apex:outputPanel>
+	                        <apex:inputTextArea style="width:85%" value="{!siteObject.iTV_Vendor_Comments__c}" label=""/>
+	                    </apex:pageBlockSection>
+                    </apex:pageBlockSection>
+                </apex:pageBlockSection>
+            </div>
+            <!-- ****************************************************************************************************************
+            **********************************************  CONTACT    ********************************************************** 
+            *******************************************************************************************************************-->
+            <div  style="page-break-before:always" >
+                <apex:pageBlockSection columns="1" title="Contact" id="Contact" >
+                    <apex:repeat value="{!contactList}" var="con">
+                        <apex:pageBlockSection columns="2" title="{!con.FirstName + ' ' + con.LastName}">
+                            <apex:inputField value="{!con.FirstName}" />
+                            <apex:inputField value="{!con.LastName}" required="false"/>
+                            <apex:inputField value="{!con.Email}" />
+                            <apex:inputField value="{!con.Phone}" />
+                            <apex:inputText value="{!con.Role__c}" label="Title/Role" />
+                            <apex:inputField value="{!con.MailingStreet}" />
+                            <apex:inputField value="{!con.MailingCity}" />
+                            <apex:inputField value="{!con.MailingState}" />
+                            <apex:inputField value="{!con.MailingPostalCode}" />
+                            <apex:inputField value="{!con.MailingCountry}" />
+                        </apex:pageBlockSection>
+                    </apex:repeat>
+                    
+                    <apex:outputPanel styleClass="noPrint">
+                        <apex:commandButton value="Add 1 Contact" action="{!addRowContact}" rerender="Contact" immediate="true" >
+                            <apex:param assignTo="{!numRows}" value="1"/>
+                        </apex:commandButton>
+                        <apex:commandButton value="Add 3 Contacts" action="{!addRowContact}" rerender="Contact" immediate="true" >
+                            <apex:param assignTo="{!numRows}" value="3"/>
+                        </apex:commandButton>
+                        <apex:commandButton value="Add 5 Contacts" action="{!addRowContact}" rerender="Contact" immediate="true" >
+                            <apex:param assignTo="{!numRows}" value="5"/>
+                        </apex:commandButton>
+                    </apex:outputPanel>
+                </apex:pageBlockSection>
+            </div> 
+            <!-- ****************************************************************************************************************
+            ********************************************** Media Building Info    ************************************************* 
+            *******************************************************************************************************************-->
+            <div  style="page-break-before:always" >
+                <apex:pageBlockSection columns="1" title="Media Building Info" id="Building" >
+                    <apex:repeat value="{!buildingMap}" var="build">
+                        <apex:pageBlockSection columns="1" title="Building {!buildingMap[build].Name}">
+                            <apex:pageBlockSection columns="1" title="Please look at the rooms and fill out the TV & Room Section while in this Building">
+                            	<apex:pageBlockSection columns="2">
+	                                <apex:inputField value="{!buildingMap[build].Name}" label="Building Name" style="width:45%"/>
+	                                <apex:inputField value="{!buildingMap[build].Number_of_Floors__c}" />
+	                                <apex:inputField value="{!buildingMap[build].Number_of_Guest_Patient_Room_Floors__c}" />
+	                                <apex:inputField value="{!buildingMap[build].Age_of_Building__c}" />
+	                                <apex:inputField value="{!buildingMap[build].Number_of_Cust_room_TV_s_per_floor__c}" label="Number of Guest/Patient TV's per floor"/>
+	                                <apex:inputField value="{!buildingMap[build].Number_of_non_Cust_room_TV_s_per_floor__c}" label="Number of non-Guest/Patient TV's per floor" />
+	                                <apex:inputField value="{!buildingMap[build].Length_and_Width_of_Rooms__c}" label="Length and Width of Guest Rooms" />
+	                                <apex:inputField value="{!buildingMap[build].Number_of_Meeting_Rooms__c}" />
+                                	<apex:inputField value="{!buildingMap[build].Length_of_Hallway__c}" label="Length of Hallway" />
+	                                <apex:inputField value="{!buildingMap[build].Total_Number_of_IDF_s_in_this_building__c}" />
+	                                <apex:inputText value="{!buildingMap[build].Hallway_Ceiling_Composition__c}" />
+                                	<apex:inputText value="{!buildingMap[build].Guest_Patient_Room_Ceiling_Composition__c}" label="Guest/Patient Room Ceiling Composition" />
+	                                <apex:pageBlockSectionItem >
+	                                    <apex:selectRadio value="{!buildingMap[build].Dust_Control_Equip_Required_Anywhere__c}" style="padding-left:50px"> 
+	                                        <apex:selectOptions value="{!yesNoList}" />
+	                                    </apex:selectRadio>
+	                                    <apex:outputText value="Do any area(s) of this building require the use of Dust control equipment?" />
+	                                </apex:pageBlockSectionItem>
+	                            </apex:pageBlockSection>
+                            </apex:pageBlockSection>
+                            <apex:pageBlockSection columns="1" collapsible="false">
+                            	<apex:outputText value="If yes explain where" />
+                                <apex:inputTextArea style="width:70%" value="{!buildingMap[build].Dust_Control_Equip_Required_Where__c}" label=""/>
+                            </apex:pageBlockSection>
+                            <apex:pageBlockSection columns="2" title="Building Construction Type: Please pick one from each of the selections below. Use notes section if other is selected" collapsible="false">
+                                <apex:inputText value="{!buildingMap[build].Walls_Separating_Guestrooms__c}" label="Walls Separating Guest Rooms" />
+                                <apex:inputText value="{!buildingMap[build].Corridor_Walls__c}" label="Corridor Walls" />
+                                <apex:inputText value="{!buildingMap[build].Floor_Type__c}" label="Floor Type (if > 1 story)" />
+                                <apex:inputText value="{!buildingMap[build].Ceiling_Type_First_Floor__c}" label="Ceiling Type - First Floor" />
+                                <apex:inputText value="{!buildingMap[build].Ceiling_Type_Upper_Floors__c}" label="Ceiling Type - Upper Floors" />
+                                <apex:inputTextArea style="width:90%" value="{!buildingMap[build].Notes__c}" />
+                            </apex:pageBlockSection>
+                            <apex:repeat value="{!id2mediaList[build]}" var="media">
+                            	<apex:pageBlockSection title="IDF" columns="1">
+		                            <apex:pageBlockSection columns="2">
+		                            	<apex:inputField value="{!id2MediaIdfMap[media].Floor_Number__c}" label="IDF's Floor Number" />
+		                         		<apex:inputField value="{!id2MediaIdfMap[media].Location__c}" label="IDF's Location" />
+		                            	<apex:inputText value="{!id2MediaIdfMap[media].Type_of_Wiring_Used__c}" label="Type of wiring used?"/>
+		                            </apex:pageBlockSection>
+		                            <apex:pageBlockSection columns="1">
+		                            	<apex:inputText value="{!id2MediaIdfMap[media].Type_of_Trunk_line_4_this_IDF__c}" label="Type of Trunk line for this IDF or area of rooms" />
+		                            	<apex:pageBlockSectionItem labelStyle="width:20%">
+				                            <apex:selectRadio value="{!id2MediaIdfMap[media].Conduit_being_used_from_IDF_to_TV__c}" style="padding-left:50px">
+				                                 <apex:selectOptions value="{!yesNoList}" /> 
+				                             </apex:selectRadio>
+		                            		<apex:outputText value="Does the Trunk line need to be replaced?" />
+		                            	</apex:pageBlockSectionItem>
+		                            	<apex:inputField value="{!id2MediaIdfMap[media].Explain_Trunk_Line_need_2_be_Replaced__c}" label="Explain" />
+		                            	<apex:pageBlockSectionItem >
+				                             <apex:selectRadio value="{!id2MediaIdfMap[media].Conduit_being_used_from_IDF_to_TV__c}" style="padding-left:50px">
+				                                 <apex:selectOptions value="{!yesNoList}" /> 
+				                             </apex:selectRadio>
+				                             <apex:outputText value="Is conduit being used from IDF to TV?" />
+		                         		</apex:pageBlockSectionItem>
+		                            	<apex:inputField value="{!id2MediaIdfMap[media].Explain_Conduit_being_used_from_IDF_2_TV__c}" label="Explain" />
+		                         		<apex:pageBlockSectionItem >
+				                             <apex:selectRadio value="{!id2MediaIdfMap[media].Existing_devices_need_replaced__c}" style="padding-left:50px">
+				                                 <apex:selectOptions value="{!yesNoList}" /> 
+				                             </apex:selectRadio>
+				                             <apex:outputText value="Do existing devices need replaced?" />
+		                         		</apex:pageBlockSectionItem>
+		                         		<apex:inputField value="{!id2MediaIdfMap[media].Explain_Existing_devices_need_replaced__c}" label="Explain" />
+		                         		<apex:pageBlockSectionItem >
+				                             <apex:selectRadio value="{!id2MediaIdfMap[media].Existing_Connectors_need_to_be_replaced__c}" style="padding-left:50px">
+				                                 <apex:selectOptions value="{!yesNoList}" /> 
+				                             </apex:selectRadio>
+				                             <apex:outputText value="Do the existing connectors need to be replaced?" />
+		                         		</apex:pageBlockSectionItem>
+		                         		<apex:inputField value="{!id2MediaIdfMap[media].Explain_Existing_Connector_need_replaced__c}" label="Explain"/>
+		                         		<apex:pageBlockSectionItem >
+				                             <apex:selectRadio value="{!id2MediaIdfMap[media].Enough_Cable_behind_wall_plates_2_cut__c}" style="padding-left:50px">
+				                                 <apex:selectOptions value="{!yesNoList}" /> 
+				                             </apex:selectRadio>
+				                             <apex:outputText value="Is there enough cable behind the wall plates to cut new fittings?" />
+		                         		</apex:pageBlockSectionItem>
+		                         		<apex:inputField value="{!id2MediaIdfMap[media].Explain_cable_behind_wall_plates_2_cut__c}" label="Explain"/>
+		                         		
+		                         	</apex:pageBlockSection>
+		                         	<apex:pageBlockSection columns="2">
+	                          			<apex:inputText value="{!id2MediaIdfMap[media].Cable_Type_from_IDF_to_Room__c}" label="Cable type from IDF to room" />
+		                             	<apex:inputText value="{!id2MediaIdfMap[media].Fitting_Type__c}" label="Fitting Type" />
+		                         		<apex:outputPanel >Comments<div style="clear:both"></div><apex:inputField style="width:80%" value="{!id2MediaIdfMap[media].Fitting_Type_Comments__c}" /></apex:outputPanel>
+		                         		<apex:inputField value="{!id2MediaIdfMap[media].Number_of_Amps_used_in_this_IDF__c}" label="Number of Amps used in this IDF?" />
+		                         		<apex:inputField value="{!id2MediaIdfMap[media].Number_of_rooms_fed_from_this_IDF__c}" label="Number of rooms fed from this IDF" />
+		                         		<apex:pageBlockSectionItem >
+				                             <apex:selectRadio value="{!id2MediaIdfMap[media].AC_power_present_to_add_an_Amp__c}" style="padding-left:50px">
+				                                 <apex:selectOptions value="{!yesNoList}" /> 
+				                             </apex:selectRadio>
+				                             <apex:outputText value="Is AC power present to add an Amplifiers?" />
+		                         		</apex:pageBlockSectionItem>
+		                         		<apex:pageBlockSectionItem >
+				                             <apex:selectRadio value="{!id2MediaIdfMap[media].Adequate_wall_space_available__c}" style="padding-left:50px">
+				                                 <apex:selectOptions value="{!yesNoList}" /> 
+				                             </apex:selectRadio>
+				                             <apex:outputText value="Is adequate wall space available" />
+		                         		</apex:pageBlockSectionItem>
+		                         	</apex:pageBlockSection>
+		                         	<apex:outputPanel >Describe wiring layout for rooms being fed from this IDF?</apex:outputPanel>
+	                         		<apex:inputTextArea style="width:80%" value="{!id2MediaIdfMap[media].Wiring_Layout_4_rooms_being_fed_from_IDF__c}" label="" />
+	                         		<apex:pageBlockSection columns="2" collapsible="false">
+	                         			<apex:outputPanel ><h3>Homerun</h3> </apex:outputPanel>
+	                         			<apex:inputText style="display:none" />
+	                         			<apex:inputField value="{!id2MediaIdfMap[media].Homerun_Furthest_drop_cable_distance__c}" label="Furthest drop cable distance"/>
+	                         			<apex:inputField value="{!id2MediaIdfMap[media].Homerun_Number_of_IDF_MATV_Locations__c}" label="Number of IDF/MATV Locations"/>
+	                         			<apex:outputPanel ><h3>Riser</h3> </apex:outputPanel>
+	                         			<apex:inputText style="display:none" />
+	                         			<apex:inputField value="{!id2MediaIdfMap[media].Riser_Furthest_TOR_distance__c}" label="Furthest TOR distance"/>
+	                         			<apex:inputField value="{!id2MediaIdfMap[media].Riser_Number_of_IDF_MATV_Locations__c}" label="Number of IDF/MATV Locations"/>
+	                         			<apex:inputField value="{!id2MediaIdfMap[media].Riser_Number_of_taps_on_longest_Riser__c}" label="Number of taps on longest riser"/>
+	                         			<apex:inputField value="{!id2MediaIdfMap[media].Riser_riser_cable_distance_between_taps__c}" label="Riser cable distance between taps"/>
+	                         			<apex:outputPanel ><h3>Trunk and Tap</h3> </apex:outputPanel>
+	                         			<apex:inputText style="display:none" />
+	                         			<apex:inputField value="{!id2MediaIdfMap[media].Trunk_Furthest_TOR_Distance__c}" label="Furthest TOR distance"/>
+	                         			<apex:inputField value="{!id2MediaIdfMap[media].Trunk_Number_of_IDF_MATV_Locations__c}" label="Number of IDF/MATV Locations"/>
+	                         			<apex:inputField value="{!id2MediaIdfMap[media].Trunk_Number_of_taps_on_longest_riser__c}" label="Number of taps on longest riser"/>
+	                         			<apex:inputField value="{!id2MediaIdfMap[media].Trunk_Riser_cable_distance_between_taps__c}" label="Riser cable distance between taps"/>
+	                         		</apex:pageBlockSection>
+	                         		<apex:pageBlockSection columns="1" collapsible="false">
+	                         			<apex:inputField value="{!id2MediaIdfMap[media].Tap_Location__c}" label="Tap Location" />
+	                         			<apex:outputPanel >Existing Distribution Comments: (List in detail problems found)</apex:outputPanel>
+	                         			<apex:inputTextArea style="width:70%" value="{!id2MediaIdfMap[media].Existing_Distribution_Comments__c}" label="" />
+	                         		</apex:pageBlockSection>
+	                         	</apex:pageBlockSection>
+	                         </apex:repeat>
+	                         <apex:commandButton styleclass="noPrint" value="Add an IDF" action="{!addRowIDF}" rerender="pageBody">
+	                         	<apex:param assignTo="{!locationId}" value="{!build}" name="BuildingId" />
+	                         	<apex:param assignTo="{!numRows}" value="1" name="buildingNumRows" /> 
+	                         </apex:commandButton>
+                        </apex:pageBlockSection>
+                    </apex:repeat>
+                    <apex:commandButton styleclass="noPrint" value="Add a Building" action="{!addRowBuilding}" rerender="pageBody" />
+                    <apex:pageBlockSection columns="1" title="Cable Types">
+                        <apex:repeat value="{!cableTypeList}" var="cable">
+                            <apex:pageBlockSection title="Cable Type {!cable.Make__c}" columns="1">
+                                <apex:pageBlockSection columns="2">
+                                	<apex:inputField value="{!cable.Related_Buildings__c}" label="Related Building(s)"/>
+                                	<apex:inputField value="{!cable.Related_IDF__c}" label="Related IDF(s)"/>
+                                    <apex:inputField value="{!cable.Make__c}" />
+                                    <apex:inputField value="{!cable.Model__c}" />
+                                    <apex:inputField value="{!cable.Age__c}" />
+                                    <apex:inputText value="{!cable.Type__c}" />
+                                    <apex:inputText value="{!cable.Shielding__c}" />
+                                    <apex:inputText value="{!cable.Jacket__c}" />
+                                    <apex:inputText value="{!cable.Center_Conductor__c}" />
+                                    <apex:inputText value="{!cable.Where_Used__c}" />
+                                </apex:pageBlockSection>
+                                <apex:pageBlockTable value="{!cable}" var="c">
+                                     <apex:column headervalue="Approx. Length" style="width:65px">
+                                        <apex:inputField value="{!c.Approximate_Length__c}" style="width:65px"/>
+                                    </apex:column>
+                                    <apex:column style="width:65px">
+                                        <apex:facet name="header">Inserted <br /> Ch dB Level <br /> Into 78</apex:facet>
+                                        <apex:inputField value="{!c.Inserted_Ch_dB_Level_Into_78__c}" style="width:65px"/>
+                                    </apex:column>
+                                    <apex:column style="width:65px">
+                                        <apex:facet name="header">Inserted <br />Ch dB Level <br />Into 116</apex:facet>
+                                        <apex:inputField value="{!c.Inserted_Ch_dB_Level_Into_116__c}" style="width:65px"/>
+                                    </apex:column>
+                                    <apex:column style="width:65px">
+                                        <apex:facet name="header">Inserted <br />Ch dB Level<br /> Into 125</apex:facet>
+                                        <apex:inputField value="{!c.Inserted_Ch_dB_Level_Into_125__c}" style="width:65px"/>
+                                    </apex:column>
+                                    <apex:column style="width:65px">
+                                        <apex:facet name="header">Inserted<br /> Ch dB Level<br /> out of 78</apex:facet>
+                                        <apex:inputField value="{!c.Inserted_Ch_dB_Level_Into_78__c}" style="width:65px"/>
+                                    </apex:column>
+                                    <apex:column style="width:65px">
+                                        <apex:facet name="header">Inserted <br />Ch dB Level <br />out of 116</apex:facet>
+                                        <apex:inputField value="{!c.Inserted_Ch_dB_Level_Into_116__c}" style="width:65px"/>
+                                    </apex:column>
+                                    <apex:column style="width:65px">
+                                        <apex:facet name="header" >Inserted <br />Ch dB Level<br /> out of 125</apex:facet>
+                                        <apex:inputField value="{!c.Inserted_Ch_dB_Level_Into_125__c}" style="width:65px"/>
+                                    </apex:column>
+                                    <apex:column style="width:65px">
+                                        <apex:facet name="header">Calculated<br /> Loss per 100<br /> Feet 78</apex:facet>
+                                        <apex:inputField value="{!c.Calculated_Loss_per_100_Feet_78__c}" style="width:65px"/>
+                                    </apex:column>
+                                    <apex:column style="width:65px" >
+                                        <apex:facet name="header">Calculated<br /> Loss per 100<br /> Feet 116</apex:facet>
+                                        <apex:inputField value="{!c.Calculated_Loss_per_100_Feet_116__c}" style="width:65px"/>
+                                    </apex:column>
+                                    <apex:column style="width:65px" >
+                                        <apex:facet name="header">Calculated<br /> Loss per 100<br /> Feet 125</apex:facet>
+                                        <apex:inputField value="{!c.Calculated_Loss_per_100_Feet_125__c}" style="width:65px"/>
+                                    </apex:column>
+                                </apex:pageBlockTable>
+                                <apex:pageBlockSection columns="2">
+                                	<apex:pageBlockSectionItem >
+	                                    <apex:selectRadio value="{!cable.Rewire__c}" style="padding-left:50px">
+	                                        <apex:selectOptions value="{!yesNoList}" />
+	                                    </apex:selectRadio>
+	                                    <apex:outputPanel >Rewire</apex:outputPanel>
+	                                </apex:pageBlockSectionItem>
+                                    <apex:pageBlockSectionItem >
+	                                    <apex:selectRadio value="{!cable.Cable_in_Conduit__c}" style="padding-left:50px">
+	                                        <apex:selectOptions value="{!yesNoList}" />
+	                                    </apex:selectRadio>
+	                                    <apex:outputPanel >Cable in Conduit</apex:outputPanel>
+	                                </apex:pageBlockSectionItem>
+                                    <apex:inputField value="{!cable.EMT_Size__c}" />
+                                    <apex:pageBlockSectionItem >
+	                                    <apex:selectRadio value="{!cable.New_Cable_Could_be_Easily_Pulled__c}" style="padding-left:50px">
+	                                        <apex:selectOptions value="{!yesNoList}" />
+	                                    </apex:selectRadio>
+	                                    <apex:outputPanel >New cable could be easily pulled</apex:outputPanel>
+	                                </apex:pageBlockSectionItem>
+                                    <apex:pageBlockSectionItem >
+	                                    <apex:selectRadio value="{!cable.Post_Wiring_Necessary__c}" style="padding-left:50px">
+	                                        <apex:selectOptions value="{!yesNoList}" />
+	                                    </apex:selectRadio>
+	                                    <apex:outputPanel >Post Wiring Necessary</apex:outputPanel>
+	                                </apex:pageBlockSectionItem>
+                                </apex:pageBlockSection>
+                                <apex:pageBlockSection columns="1">
+                                    <apex:inputTextArea value="{!cable.Comments__c}" style="width:70%"/> 
+                                </apex:pageBlockSection>
+                            </apex:pageBlockSection>
+                        </apex:repeat>
+                        <apex:commandButton styleclass="noPrint" value="Add A Cable Type" action="{!addRowCableType}" rerender="pageBody"> 
+                        	<apex:param assignTo="{!numRows}" value="1" name="cableNumRows" /> 
+                        </apex:commandButton>
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection title="Passive Devices" id="PASSIVE" columns="2">
+                        <apex:pageBlockTable value="{!passiveDeviceList}" var="p">
+	                          <apex:column headervalue="Device" >
+	                             <apex:inputText value="{!p.Device__c}" style="width:65px"/>
+	                         </apex:column>
+	                         <apex:column headervalue="Make">
+	                             <apex:inputField value="{!p.Make__c}" style="width:65px"/>
+	                         </apex:column>
+	                         <apex:column headervalue="Model #">
+	                             <apex:inputField value="{!p.Model__c}" style="width:65px"/>
+	                         </apex:column>
+	                         <apex:column headervalue="Frequency Range">
+	                             <apex:inputField value="{!p.Frequency_Range__c}" style="width:65px"/>
+	                         </apex:column>
+	                         <apex:column headervalue="Need Replacement?">
+	                              <apex:selectRadio value="{!p.Replacement__c}">
+	                                  <apex:selectOptions value="{!yesNoList}" />
+	                              </apex:selectRadio>
+	                         </apex:column> 
+	                         <apex:column headervalue="Related Building and IDF">
+	                              <apex:inputField value="{!p.Related_Buildings__c}" style="width:65px"/>
+	                         </apex:column> 
+	                     </apex:pageBlockTable>
+                         <br />
+                         <apex:commandButton styleclass="noPrint" value="Add A Passive Device" action="{!addRowPassiveDevice}" rerender="pageBody"> 
+                     	    <apex:param assignTo="{!numRows}" value="1" name="passiveNumRows" /> 
+                         </apex:commandButton> 
+                    </apex:pageBlockSection>
+                    
+                </apex:pageBlockSection>
+            </div>
+             <!-- ****************************************************************************************************************
+            **********************************************  BB MDF    ************************************************ 
+            *******************************************************************************************************************-->
+            <div  style="page-break-before:always" >
+                <apex:pageBlockSection columns="1" title="BB MDF" id="BB_MDF" >
+                	<apex:repeat value="{!bbMDFList}" var="idf">
+                		<apex:pageBlockSection columns="1" title="BB MDF {!idf.Where_DMARC_Located__c}">
+		                	<apex:pageBlockSection columns="2" title="Common Information">
+			                	<apex:inputField value="{!idf.Where_DMARC_Located__c}" label="Where is the DMARC located?" />
+			                	<apex:pageBlockSectionItem >
+		                             <apex:selectRadio value="{!idf.DMARC_Extended__c}">
+		                                 <apex:selectOptions value="{!yesNoList}" />
+		                             </apex:selectRadio>
+		                             <apex:outputText value="Is the DMARC extended?" />
+		                         </apex:pageBlockSectionItem>
+			                	<apex:inputField value="{!idf.Where_is_HSIA_Router_located__c}" label="Where is the HSIA Router located?" />
+			                	<apex:inputText style="display:none" />
+			                	<apex:inputField value="{!idf.HSIA_Router_Make__c}" />
+			                	<apex:inputField value="{!idf.HSIA_Router_Model__c}" />
+			                	<apex:inputField value="{!idf.Corporate_Router_location__c}" label="Where is the Corporate Router located?" />
+			                	<apex:inputText style="display:none" />
+			                	<apex:inputField value="{!idf.Corporate_Router_Make__c}" label="Corporate Router Make" />
+			                	<apex:inputField value="{!idf.Corporate_Router_Model__c}" label="Corporate Router Model" />
+			                </apex:pageBlockSection>
+			                <apex:pageBlockSection columns="1" title="MDF Information">
+			                	<apex:pageBlockSection columns="2">
+				                	<apex:inputField value="{!idf.Room_Location__c}" label="Room Location?" />
+				                	<apex:inputField value="{!idf.Room_Size__c}" label="Room Size (LxWxH)" />
+				                	<apex:pageBlockSectionItem >
+			                             <apex:selectRadio value="{!idf.Existing_HSIA_IDF_stacked_floor_2_floor__c}" style="padding-left:50px">
+			                                 <apex:selectOptions value="{!yesNoList}" />
+			                             </apex:selectRadio>
+			                             <apex:outputText value="Are existing HSIA IDFs stacked from floor to floor?" />
+			                         </apex:pageBlockSectionItem>
+			                         <apex:inputText style="display:none" />
+			                         <apex:pageBlockSectionItem >
+			                             <apex:selectRadio value="{!idf.Location_have_a_rack__c}" style="padding-left:50px">
+			                                 <apex:selectOptions value="{!yesNoList}" />
+			                             </apex:selectRadio>
+			                             <apex:outputText value="Does this location have a rack?" />
+				                    </apex:pageBlockSectionItem>
+				                    <apex:inputText style="display:none" />
+				                    <apex:inputField value="{!idf.Type_of_Location_have_a_rack__c}" label="If Yes, what type?" />
+				                	<apex:inputField value="{!idf.Rack_Units_and_depth__c}" label="If yes, how many rack units and depth?" />
+				                	<apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Rack_properly_attached_and_secured__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="If yes, is the rack properly attached and secured?" />
+			                        </apex:pageBlockSectionItem>
+				                	<apex:inputField value="{!idf.Needs_to_be_done_to_correct__c}" label="If no, what needs to be done to correct?" />
+				                	<apex:pageBlockSectionItem >
+			                             <apex:selectRadio value="{!idf.Is_110V_AC_power_available__c}" style="padding-left:50px">
+			                                 <apex:selectOptions value="{!yesNoList}" />
+			                             </apex:selectRadio>
+			                             <apex:outputText value="Is 110 AC power available?" />
+			                         </apex:pageBlockSectionItem>
+			                         <apex:inputText style="display:none" />
+			                         <apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Can_110V_AC_Power_be_added__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="If no, can it be added?" />
+			                        </apex:pageBlockSectionItem>
+				                	<apex:inputField value="{!idf.Describe_AC_Power__c}" />
+				                	<apex:inputField value="{!idf.Distance_from_rack__c}" label="Distance from rack?" />
+				                	<apex:inputText style="display:none" />
+				                	<apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Location_climate_controlled__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Is this location climate controlled?" />
+			                        </apex:pageBlockSectionItem>
+			                    </apex:pageBlockSection>
+			                    <apex:pageBlockSection columns="1">
+				                	<apex:inputField value="{!idf.Explain_how_cooling_be_added__c}" label="If no, explain how cooling be added" />
+				                	<apex:inputField value="{!idf.Explain_current_environmental_condition__c}" label="If no, explain current environmental condition" />
+				                	<apex:pageBlockSectionItem labelStyle="width:25%">
+			                            <apex:selectRadio value="{!idf.Rack_grounded__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Is rack grounded?" />
+			                        </apex:pageBlockSectionItem>
+				                	<apex:inputField value="{!idf.Distance_to_the_nearest_ground__c}" label="If no, what is the distance to the nearest ground?" />
+				                	<apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Working_Phone_in_room__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Is there a working phone in this room?" />
+			                        </apex:pageBlockSectionItem>
+			                		<apex:inputField style="width:80%" value="{!idf.Information_Comments__c}" label="Comments" />
+			                	</apex:pageBlockSection>
+			                </apex:pageBlockSection>
+			                <apex:pageBlockSection columns="1" title="Data">
+			                	<apex:pageblockSection columns="3" title="Describe the wiring from this location to the drops" collapsible="false">
+			                		<apex:inputField value="{!idf.Wiring_Location_2_Drop_Category__c}" label="Category" />
+				                	<apex:inputField value="{!idf.Wiring_Location_2_Drop_Manufacturer__c}" label="Manufacturer" />
+				                	<apex:inputField value="{!idf.Wiring_Location_2_Drop_Part_Number__c}" label="Part #" />
+			                	</apex:pageblockSection>
+			                	<apex:outputText value="What is the length of the farthest run from this location?" />
+			                	<apex:inputField style="width:80%" value="{!idf.Length_of_farthest_run_from_location__c}" label="" />
+			                	<apex:pageblockSection columns="3" title="What types of patch panels are used?" collapsible="false">
+				                	<apex:inputField value="{!idf.Type_of_patch_panels_Category__c}" label="Category" />
+				                	<apex:inputField value="{!idf.Type_of_patch_panels_Manufacturer__c}" label="Manufacturer" />
+				                	<apex:inputField value="{!idf.Type_of_patch_panels_Part_Number__c}" label="Part #" />
+			                	</apex:pageblockSection>
+			                	<apex:pageBlockSection columns="2" collapsible="false">
+				                	<apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.All_data_terminations_on_a_patch_panel__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Are all data terminations to EIA/TIA 56B standard and on a patch panel?" />
+			                        </apex:pageBlockSectionItem>
+				                	<apex:inputField value="{!idf.Explain_data_terminations_on_patch_panel__c}" label="If no, Explain" />
+				                	<apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Patch_Panels_in_a_rack__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Are patch panels in a rack" />
+			                        </apex:pageBlockSectionItem>
+			                        <apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Patch_Panels_labeled__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Are patch panels labeled?" />
+			                        </apex:pageBlockSectionItem>
+				                	<apex:inputText value="{!idf.Types_of_phone_blocks_in_use__c}" label="What types of phone blocks are in use?" />
+				                	<apex:inputField value="{!idf.Condition_of_the_phone_blocks__c}" label="What is the condition of the phone blocks?" />
+				                	<apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.All_pairs_for_the_guestroom_punched_down__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Are all of the pairs from the guest rooms punched down?" />
+			                        </apex:pageBlockSectionItem>
+			                        <apex:inputText style="display:none" />
+				                	<apex:inputField value="{!idf.Guest_rooms_punched_down_explain__c}" label="If no, explain" />
+				                	<apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Space_on_the_blocks_to_punch_them_down__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="If no, is there space on the blocks to punch them down?" />
+			                        </apex:pageBlockSectionItem>
+			                        <apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Blocks_Labeled__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Are blocks labeled?" />
+			                        </apex:pageBlockSectionItem>
+			                    </apex:pageBlockSection>
+			                    <apex:pageBlockSection columns="1">
+				                	<apex:inputTextArea style="width:80%" value="{!idf.Data_Comments__c}" label="Comments" />
+				                </apex:pageBlockSection>
+				            </apex:pageBlockSection>
+			                <apex:pageBlockSection columns="1" title="Phone">
+			                	<apex:pageBlockSection columns="2" collapsible="false">
+				                	<apex:pageBlockSectionItem >
+			                             <apex:selectRadio value="{!idf.Same_room_as_the_data_MDF__c}" style="padding-left:50px">
+			                                 <apex:selectOptions value="{!yesNoList}" />
+			                             </apex:selectRadio>
+			                             <apex:outputText value="Is this in the same room as the data MDF?" />
+			                         </apex:pageBlockSectionItem>
+			                         <apex:inputText style="display:none" />
+				                	<apex:inputField value="{!idf.Room_Size_Phone__c}" label="If no, room size(LxWxH)" />
+				                	<apex:inputField value="{!idf.Room_Location_Phone__c}" label="If no, room location" />
+				                	<apex:inputField value="{!idf.How_are_two_rooms_connected__c}" label="If No, How are the two rooms connected?" />
+				                	<apex:outputPanel >If no, what is the distance to the phone MDF? <div style="clear:both"></div><apex:inputField value="{!idf.Distance_to_the_phone_MDF__c}" /></apex:outputPanel>
+				                	<apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Room_climate_controlled_Phone__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="If no, is the room climate controlled?" />
+			                        </apex:pageBlockSectionItem>
+			                        <apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Ground_in_the_room_phone__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="If no, is their a ground in the room?" />
+			                        </apex:pageBlockSectionItem>
+			                        <apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Existing_Phone_IDF_stacked_floor_2_floor__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Are existing Phone IDFs stacked from floor to floor?" />
+			                        </apex:pageBlockSectionItem>
+			                        <apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Guestrooms_serviced_by_digital_phones__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Are guest rooms serviced by digitial phones?" />
+			                        </apex:pageBlockSectionItem>
+			                        <apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Guestrooms_serviced_by_IP_phones__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Are guest rooms services by IP phones?" />
+			                        </apex:pageBlockSectionItem>
+			                    </apex:pageBlockSection>
+			                    <apex:inputField style="width:80%" value="{!idf.Phone_Comments_2__c}" label="Comments" />
+		                        <apex:pageblockSection columns="3" title="Describe the wiring to the guest rooms" collapsible="false">
+				                	<apex:inputField value="{!idf.Wiring_2_Guestrooms_Category__c}" label="Category" />
+				                	<apex:inputField value="{!idf.Wiring_2_Guestrooms_Manufacturers__c}" label="Manufacturer" />
+				                	<apex:inputField value="{!idf.Wiring_2_Guestrooms_Part_Number__c}" label="Part #" />
+				                </apex:pageblockSection>
+				                <apex:pageblockSection columns="3" title="Describe the wiring to the IDFs" collapsible="false">
+				                	<apex:inputField value="{!idf.Wiring_2_IDFs_Category__c}" label="Category" />
+				                	<apex:inputField value="{!idf.Wiring_2_IDFs_Manufacturer__c}" label="Manufacturer" />
+				                	<apex:inputField value="{!idf.Wiring_2_IDFs_Part_Number__c}" label="Part #" />
+				                </apex:pageblockSection>
+				                <apex:pageBlockSection columns="2" collapsible="false">
+				                	<apex:outputPanel >Length of the longest run from MDF to guest room phone <div style="clear:both"></div><apex:inputField value="{!idf.Length_of_longest_run_MDF_2_guestRoom__c}" /></apex:outputPanel>
+				                	<apex:inputText value="{!idf.Types_of_phone_blocks_in_use_Phone__c}" label="What type(s) of phone blocks are in use?"/>
+				                	<apex:inputField value="{!idf.Condition_of_phone_blocks_Phone__c}" label="What is the condition of the phone blocks?" />
+				                	<apex:inputField value="{!idf.Type_of_wire_from_PBX_block_2_Room_block__c}" label="Type of wire from PBX blocks to Room blocks?" />
+				                	<apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Blocks_cross_connected_for_DSL_solution__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Are blocks cross-connected for DSL solution?" />
+			                        </apex:pageBlockSectionItem>
+				                	<apex:inputField value="{!idf.Type_of_cross_connect_block__c}" label="If yes, type of cross-connect block" />
+				                	<apex:inputField value="{!idf.Manufacturer_of_cross_connect_block__c}" label="If yes, manufacturer of cross-connect block" />
+				                	<apex:inputField style="width:60%" value="{!idf.Explain_all_pairs_punched_down__c}" label="If no, explain " />
+				                	<apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.All_pairs_4_guestroom_punched_down_Phone__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Are all of the pairs from the guest rooms punched down?" />
+			                        </apex:pageBlockSectionItem>
+				                	<apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Space_on_blocks_punch_them_down_Phone__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="If no, is there space on the blocks to punch them down?" />
+			                        </apex:pageBlockSectionItem>
+			                        <apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Blocks_Labeled_Phone__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Are blocks labeled?" />
+			                        </apex:pageBlockSectionItem>
+			                    </apex:pageBlockSection>
+			                    <apex:inputField style="width:80%" value="{!idf.Phone_Comments__c}" label="Comments" />
+			                </apex:pageBlockSection>
+		                </apex:pageBlockSection>
+		            </apex:repeat>
+		            <apex:outputPanel styleclass="noPrint" >
+		            	<apex:commandButton value="Add an MDF" action="{!addBBMDf}" rerender="pageBody">
+		            		<apex:param assignTo="{!numRows}" value="1"/>
+		            	</apex:commandButton>
+		            	<apex:commandButton value="Add 3 MDF" action="{!addBBMDf}" rerender="pageBody">
+		            		<apex:param assignTo="{!numRows}" value="3"/>
+		            	</apex:commandButton>
+		            	<apex:commandButton value="Add 5 MDF" action="{!addBBMDf}" rerender="pageBody">
+		            		<apex:param assignTo="{!numRows}" value="5"/>
+		            	</apex:commandButton>
+		            </apex:outputPanel>
+		            
+                </apex:pageBlockSection>
+            </div>
+            <!-- ****************************************************************************************************************
+            **********************************************  BB IDF    ************************************************ 
+            *******************************************************************************************************************-->
+            <div  style="page-break-before:always" >
+                <apex:pageBlockSection columns="1" title="BB IDF" id="BB_IDF" >
+                	<apex:repeat value="{!bbIDFList}" var="idf">
+                		<apex:pageBlockSection columns="1" title="BB IDF {!idf.Where_DMARC_Located__c}">
+		                	<apex:pageBlockSection columns="2" title="Common Information">
+			                	<apex:inputField value="{!idf.Where_DMARC_Located__c}" label="Where is the DMARC located?" />
+			                	<apex:pageBlockSectionItem >
+		                             <apex:selectRadio value="{!idf.DMARC_Extended__c}">
+		                                 <apex:selectOptions value="{!yesNoList}" />
+		                             </apex:selectRadio>
+		                             <apex:outputText value="Is the DMARC extended?" />
+		                         </apex:pageBlockSectionItem>
+			                	<apex:inputField value="{!idf.Where_is_HSIA_Router_located__c}" label="Where is the HSIA Router located?" />
+			                	<apex:inputText style="display:none" />
+			                	<apex:inputField value="{!idf.HSIA_Router_Make__c}" />
+			                	<apex:inputField value="{!idf.HSIA_Router_Model__c}" />
+			                	<apex:inputField value="{!idf.Corporate_Router_location__c}" label="Where is the Corporate Router located?" />
+			                	<apex:inputText style="display:none" />
+			                	<apex:inputField value="{!idf.Corporate_Router_Make__c}" label="Corporate Router Make" />
+			                	<apex:inputField value="{!idf.Corporate_Router_Model__c}" label="Corporate Router Model" />
+			                </apex:pageBlockSection>
+			                <apex:pageBlockSection columns="1" title="IDF Information">
+			                	<apex:pageBlockSection columns="2">
+				                	<apex:inputField value="{!idf.Room_Location__c}" label="Room Location?" />
+				                	<apex:inputField value="{!idf.Room_Size__c}" label="Room Size (LxWxH)" />
+				                	<apex:pageBlockSectionItem >
+			                             <apex:selectRadio value="{!idf.Existing_HSIA_IDF_stacked_floor_2_floor__c}" style="padding-left:50px">
+			                                 <apex:selectOptions value="{!yesNoList}" />
+			                             </apex:selectRadio>
+			                             <apex:outputText value="Are existing HSIA IDFs stacked from floor to floor?" />
+			                         </apex:pageBlockSectionItem>
+			                         <apex:inputText style="display:none" />
+			                         <apex:pageBlockSectionItem >
+			                             <apex:selectRadio value="{!idf.Location_have_a_rack__c}" style="padding-left:50px">
+			                                 <apex:selectOptions value="{!yesNoList}" />
+			                             </apex:selectRadio>
+			                             <apex:outputText value="Does this location have a rack?" />
+				                    </apex:pageBlockSectionItem>
+				                    <apex:inputText style="display:none" />
+				                    <apex:inputField value="{!idf.Type_of_Location_have_a_rack__c}" label="If Yes, what type?" />
+				                	<apex:inputField value="{!idf.Rack_Units_and_depth__c}" label="If yes, how many rack units and depth?" />
+				                	<apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Rack_properly_attached_and_secured__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="If yes, is the rack properly attached and secured?" />
+			                        </apex:pageBlockSectionItem>
+				                	<apex:inputField value="{!idf.Needs_to_be_done_to_correct__c}" label="If no, what needs to be done to correct?" />
+				                	<apex:pageBlockSectionItem >
+			                             <apex:selectRadio value="{!idf.Is_110V_AC_power_available__c}" style="padding-left:50px">
+			                                 <apex:selectOptions value="{!yesNoList}" />
+			                             </apex:selectRadio>
+			                             <apex:outputText value="Is 110 AC power available?" />
+			                         </apex:pageBlockSectionItem>
+			                         <apex:inputText style="display:none" />
+			                         <apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Can_110V_AC_Power_be_added__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="If no, can it be added?" />
+			                        </apex:pageBlockSectionItem>
+				                	<apex:inputField value="{!idf.Describe_AC_Power__c}" />
+				                	<apex:inputField value="{!idf.Distance_from_rack__c}" label="Distance from rack?" />
+				                	<apex:inputText style="display:none" />
+				                	<apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Location_climate_controlled__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Is this location climate controlled?" />
+			                        </apex:pageBlockSectionItem>
+			                    </apex:pageBlockSection>
+			                    <apex:pageBlockSection columns="1">
+				                	<apex:inputField value="{!idf.Explain_how_cooling_be_added__c}" label="If no, explain how cooling be added" />
+				                	<apex:inputField value="{!idf.Explain_current_environmental_condition__c}" label="If no, explain current environmental condition" />
+				                	<apex:pageBlockSectionItem labelStyle="width:25%">
+			                            <apex:selectRadio value="{!idf.Rack_grounded__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Is rack grounded?" />
+			                        </apex:pageBlockSectionItem>
+				                	<apex:inputField value="{!idf.Distance_to_the_nearest_ground__c}" label="If no, what is the distance to the nearest ground?" />
+				                	<apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Working_Phone_in_room__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Is there a working phone in this room?" />
+			                        </apex:pageBlockSectionItem>
+			                		<apex:inputField style="width:80%" value="{!idf.Information_Comments__c}" label="Comments" />
+			                	</apex:pageBlockSection>
+			                </apex:pageBlockSection>
+			                <apex:pageBlockSection columns="1" title="Data">
+			                	<apex:pageblockSection columns="3" title="Describe the wiring from this location to the drops" collapsible="false">
+			                		<apex:inputField value="{!idf.Wiring_Location_2_Drop_Category__c}" label="Category" />
+				                	<apex:inputField value="{!idf.Wiring_Location_2_Drop_Manufacturer__c}" label="Manufacturer" />
+				                	<apex:inputField value="{!idf.Wiring_Location_2_Drop_Part_Number__c}" label="Part #" />
+			                	</apex:pageblockSection>
+			                	<apex:outputText value="What is the length of the farthest run from this location?" />
+			                	<apex:inputField style="width:80%" value="{!idf.Length_of_farthest_run_from_location__c}" label="" />
+			                	<apex:pageblockSection columns="3" title="What types of patch panels are used?" collapsible="false">
+				                	<apex:inputField value="{!idf.Type_of_patch_panels_Category__c}" label="Category" />
+				                	<apex:inputField value="{!idf.Type_of_patch_panels_Manufacturer__c}" label="Manufacturer" />
+				                	<apex:inputField value="{!idf.Type_of_patch_panels_Part_Number__c}" label="Part #" />
+			                	</apex:pageblockSection>
+			                	<apex:pageBlockSection columns="2" collapsible="false">
+				                	<apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.All_data_terminations_on_a_patch_panel__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Are all data terminations to EIA/TIA 56B standard and on a patch panel?" />
+			                        </apex:pageBlockSectionItem>
+				                	<apex:inputField value="{!idf.Explain_data_terminations_on_patch_panel__c}" label="If no, Explain" />
+				                	<apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Patch_Panels_in_a_rack__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Are patch panels in a rack" />
+			                        </apex:pageBlockSectionItem>
+			                        <apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Patch_Panels_labeled__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Are patch panels labeled?" />
+			                        </apex:pageBlockSectionItem>
+				                	<apex:inputText value="{!idf.Types_of_phone_blocks_in_use__c}" label="What types of phone blocks are in use?" />
+				                	<apex:inputField value="{!idf.Condition_of_the_phone_blocks__c}" label="What is the condition of the phone blocks?" />
+				                	<apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.All_pairs_for_the_guestroom_punched_down__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Are all of the pairs from the guest rooms punched down?" />
+			                        </apex:pageBlockSectionItem>
+			                        <apex:inputText style="display:none" />
+				                	<apex:inputField value="{!idf.Guest_rooms_punched_down_explain__c}" label="If no, explain" />
+				                	<apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Space_on_the_blocks_to_punch_them_down__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="If no, is there space on the blocks to punch them down?" />
+			                        </apex:pageBlockSectionItem>
+			                        <apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Blocks_Labeled__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Are blocks labeled?" />
+			                        </apex:pageBlockSectionItem>
+			                    </apex:pageBlockSection>
+			                    <apex:pageBlockSection columns="1">
+				                	<apex:inputTextArea style="width:80%" value="{!idf.Data_Comments__c}" label="Comments" />
+				                </apex:pageBlockSection>
+				            </apex:pageBlockSection>
+			                <apex:pageBlockSection columns="1" title="Phone">
+			                	<apex:pageBlockSection columns="2" collapsible="false">
+				                	<apex:pageBlockSectionItem >
+			                             <apex:selectRadio value="{!idf.Same_room_as_the_data_MDF__c}" style="padding-left:50px">
+			                                 <apex:selectOptions value="{!yesNoList}" />
+			                             </apex:selectRadio>
+			                             <apex:outputText value="Is this in the same room as the data MDF?" />
+			                         </apex:pageBlockSectionItem>
+			                         <apex:inputText style="display:none" />
+				                	<apex:inputField value="{!idf.Room_Size_Phone__c}" label="If no, room size(LxWxH)" />
+				                	<apex:inputField value="{!idf.Room_Location_Phone__c}" label="If no, room location" />
+				                	<apex:inputField value="{!idf.How_are_two_rooms_connected__c}" label="If No, How are the two rooms connected?" />
+				                	<apex:outputPanel >If no, what is the distance to the phone MDF? <div style="clear:both"></div><apex:inputField value="{!idf.Distance_to_the_phone_MDF__c}" /></apex:outputPanel>
+				                	<apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Room_climate_controlled_Phone__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="If no, is the room climate controlled?" />
+			                        </apex:pageBlockSectionItem>
+			                        <apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Ground_in_the_room_phone__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="If no, is their a ground in the room?" />
+			                        </apex:pageBlockSectionItem>
+			                        <apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Existing_Phone_IDF_stacked_floor_2_floor__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Are existing Phone IDFs stacked from floor to floor?" />
+			                        </apex:pageBlockSectionItem>
+			                        <apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Guestrooms_serviced_by_digital_phones__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Are guest rooms serviced by digitial phones?" />
+			                        </apex:pageBlockSectionItem>
+			                        <apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Guestrooms_serviced_by_IP_phones__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Are guest rooms services by IP phones?" />
+			                        </apex:pageBlockSectionItem>
+			                    </apex:pageBlockSection>
+			                    <apex:inputField style="width:80%" value="{!idf.Phone_Comments_2__c}" label="Comments" />
+		                        <apex:pageblockSection columns="3" title="Describe the wiring to the guest rooms" collapsible="false">
+				                	<apex:inputField value="{!idf.Wiring_2_Guestrooms_Category__c}" label="Category" />
+				                	<apex:inputField value="{!idf.Wiring_2_Guestrooms_Manufacturers__c}" label="Manufacturer" />
+				                	<apex:inputField value="{!idf.Wiring_2_Guestrooms_Part_Number__c}" label="Part #" />
+				                </apex:pageblockSection>
+				                <apex:pageblockSection columns="3" title="Describe the wiring to the IDFs" collapsible="false">
+				                	<apex:inputField value="{!idf.Wiring_2_IDFs_Category__c}" label="Category" />
+				                	<apex:inputField value="{!idf.Wiring_2_IDFs_Manufacturer__c}" label="Manufacturer" />
+				                	<apex:inputField value="{!idf.Wiring_2_IDFs_Part_Number__c}" label="Part #" />
+				                </apex:pageblockSection>
+				                <apex:pageBlockSection columns="2" collapsible="false">
+				                	<apex:outputPanel >Length of the longest run from MDF to guest room phone <div style="clear:both"></div><apex:inputField value="{!idf.Length_of_longest_run_MDF_2_guestRoom__c}" /></apex:outputPanel>
+				                	<apex:inputText value="{!idf.Types_of_phone_blocks_in_use_Phone__c}" label="What type(s) of phone blocks are in use?"/>
+				                	<apex:inputField value="{!idf.Condition_of_phone_blocks_Phone__c}" label="What is the condition of the phone blocks?" />
+				                	<apex:inputField value="{!idf.Type_of_wire_from_PBX_block_2_Room_block__c}" label="Type of wire from PBX blocks to Room blocks?" />
+				                	<apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Blocks_cross_connected_for_DSL_solution__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Are blocks cross-connected for DSL solution?" />
+			                        </apex:pageBlockSectionItem>
+				                	<apex:inputField value="{!idf.Type_of_cross_connect_block__c}" label="If yes, type of cross-connect block" />
+				                	<apex:inputField value="{!idf.Manufacturer_of_cross_connect_block__c}" label="If yes, manufacturer of cross-connect block" />
+				                	<apex:inputField style="width:60%" value="{!idf.Explain_all_pairs_punched_down__c}" label="If no, explain " />
+				                	<apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.All_pairs_4_guestroom_punched_down_Phone__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Are all of the pairs from the guest rooms punched down?" />
+			                        </apex:pageBlockSectionItem>
+				                	<apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Space_on_blocks_punch_them_down_Phone__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="If no, is there space on the blocks to punch them down?" />
+			                        </apex:pageBlockSectionItem>
+			                        <apex:pageBlockSectionItem >
+			                            <apex:selectRadio value="{!idf.Blocks_Labeled_Phone__c}" style="padding-left:50px">
+			                                <apex:selectOptions value="{!yesNoList}" />
+			                            </apex:selectRadio>
+			                            <apex:outputText value="Are blocks labeled?" />
+			                        </apex:pageBlockSectionItem>
+			                    </apex:pageBlockSection>
+			                    <apex:inputField style="width:80%" value="{!idf.Phone_Comments__c}" label="Comments" />
+			                </apex:pageBlockSection>
+		                </apex:pageBlockSection>
+		            </apex:repeat>
+		            <apex:outputPanel styleclass="noPrint" >
+		            	<apex:commandButton value="Add an IDF" action="{!addBBIDf}" rerender="pageBody">
+		            		<apex:param assignTo="{!numRows}" value="1"/>
+		            	</apex:commandButton>
+		            	<apex:commandButton value="Add 3 IDF" action="{!addBBIDf}" rerender="pageBody">
+		            		<apex:param assignTo="{!numRows}" value="3"/>
+		            	</apex:commandButton>
+		            	<apex:commandButton value="Add 5 IDF" action="{!addBBIDf}" rerender="pageBody">
+		            		<apex:param assignTo="{!numRows}" value="5"/>
+		            	</apex:commandButton>
+		            </apex:outputPanel>
+                </apex:pageBlockSection>
+            </div>
+            <!-- ****************************************************************************************************************
+            **********************************************  BB Connectivity    ************************************************ 
+            *******************************************************************************************************************-->
+            <div  style="page-break-before:always" >
+                <apex:pageBlockSection columns="1" title="BB Connectivity" id="BB_Connectivity" >
+                	<apex:pageBlockSection columns="2" title="Cable Runs / Cable Plan">
+                		<apex:pageBlockSectionItem >
+                             <apex:selectRadio value="{!siteObject.SONIFI_Responsible_for_Cabling_Property__c}" style="padding-left:50px">
+                                 <apex:selectOptions value="{!yesNoList}" />
+                             </apex:selectRadio>
+                             <apex:outputText value="Is SONIFI responsible for cabling property?" />
+                         </apex:pageBlockSectionItem>
+                         <apex:pageBlockSectionItem >
+                             <apex:selectRadio value="{!siteObject.Fire_Stop_be_Required_for_Drilled_Holes__c}" style="padding-left:50px">
+                                 <apex:selectOptions value="{!yesNoList}" />
+                             </apex:selectRadio>
+                             <apex:outputText value="Will Fire Stop be required for drilled holes?" />
+                         </apex:pageBlockSectionItem>
+                         <apex:outputPanel >Detail any cable runs/ locations that require core drilling <div style="clear:both"></div><apex:inputField value="{!siteObject.Cable_Run_Location_Require_Core_Drilling__c}" /></apex:outputPanel>
+                         <apex:inputField value="{!siteObject.Describe_Existing_Cable_Structure__c}" label="Describe existing cable structure" />
+                         <apex:inputField value="{!siteObject.Describe_New_Cable_Structure__c}" label="Describe new cable structure" />
+                         <apex:inputField value="{!siteObject.Total_Number_of_New_Drops_Required__c}" label="Total Number of new Drops Required" />
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection columns="1">
+                         <apex:inputField style="width:80%" value="{!siteObject.Cable_Run_Additional_Comments__c}" label="Additional Comments" />
+                	</apex:pageBlockSection>
+                	<apex:pageBlockSection columns="2" title="Meeting Rooms">
+                		<apex:outputPanel >Number of conference, board, or other meeting rooms (include names) <div style="clear:both"></div><apex:inputField value="{!siteObject.Num_of_conference_board_meeting_rooms__c}" /></apex:outputPanel>
+                		<apex:pageBlockSectionItem >
+                             <apex:selectRadio value="{!siteObject.Meet_SONIFI_provide_cabled_connectivity__c}" style="padding-left:50px">
+                                 <apex:selectOptions value="{!yesNoList}" />
+                             </apex:selectRadio>
+                             <apex:outputText value="Will SONIFI provide cabled connectivity to these rooms" />
+                         </apex:pageBlockSectionItem>
+                         <apex:pageBlockSectionItem >
+                             <apex:selectRadio value="{!siteObject.Meet_SONIFI_provide_wireless_connectivty__c}" style="padding-left:50px">
+                                 <apex:selectOptions value="{!yesNoList}" />
+                             </apex:selectRadio>
+                             <apex:outputText value="Will SONIFI provide wireless connectivity to these rooms?" />
+                         </apex:pageBlockSectionItem>
+                         <apex:outputPanel >Current CAT5 Cable Paths (if any; provide names, existing cables, etc.)<div style="clear:both"></div><apex:inputField value="{!siteObject.Meet_Current_CAT5_cable_Paths__c}" /></apex:outputPanel>
+                         <apex:inputField value="{!siteObject.Meet_New_CAT5_cable_paths__c}" label="New CAT5 Cable Paths" />
+                         <apex:outputPanel >Describe any necessary drops or uplinks to connect to an IDF or MDF <div style="clear:both"></div><apex:inputField value="{!siteObject.Meet_Drops_or_Uplinks_connect_IDF_or_MDF__c}" /></apex:outputPanel>
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection columns="1">
+                         <apex:inputField style="width:80%" value="{!siteObject.Meeting_Rooms_Additional_Comments__c}" label="Additional Comments"/>
+                	</apex:pageBlockSection> 
+                	<apex:pageBlockSection columns="2" title="Lobby / Common Area">
+                		<apex:outputPanel >Number of lobby/common areas(include names) <div style="clear:both"></div><apex:inputField value="{!siteObject.Num_Lobby_Common_Area_include_Names__c}" /></apex:outputPanel>
+                		<apex:pageBlockSectionItem >
+                             <apex:selectRadio value="{!siteObject.Lobby_SONIFI_provide_cabled_Connectivity__c}" style="padding-left:50px">
+                                 <apex:selectOptions value="{!yesNoList}" />
+                             </apex:selectRadio>
+                             <apex:outputText value="Will SONIFI provide cabled connectivity to these rooms" />
+                         </apex:pageBlockSectionItem>
+                         <apex:pageBlockSectionItem >
+                             <apex:selectRadio value="{!siteObject.Lobby_SONIFI_wireless_connectivity__c}" style="padding-left:50px">
+                                 <apex:selectOptions value="{!yesNoList}" />
+                             </apex:selectRadio>
+                             <apex:outputText value="Will SONIFI provide wireless connectivity to these rooms?" />
+                         </apex:pageBlockSectionItem>
+                         <apex:outputPanel >Current CAT5 cable paths (if any; provide names, existing cables, etc.) <div style="clear:both"></div><apex:inputField value="{!siteObject.Lobby_Current_CAT5_cable_paths__c}" /></apex:outputPanel>
+                         <apex:inputField value="{!siteObject.Lobby_New_CAT5_cable_paths__c}" label="New CAT5 cable paths"/>
+                         <apex:outputPanel >Describe any necessary drops or uplinks to connect to an IDF or MDF <div style="clear:both"></div><apex:inputField value="{!siteObject.Lobby_Drops_or_Uplink_connect_IDF_or_MDF__c}" /></apex:outputPanel>
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection columns="1">
+                         <apex:inputField style="width:80%" value="{!siteObject.Lobby_Additional_Comments__c}" label="Additional Comments"/>
+                	</apex:pageBlockSection>
+                	<apex:pageBlockSection columns="2" title="Business Center">
+                		 <apex:pageBlockSectionItem >
+                             <apex:selectRadio value="{!siteObject.Business_Center_on_the_property__c}" style="padding-left:50px">
+                                 <apex:selectOptions value="{!yesNoList}" />
+                             </apex:selectRadio>
+                             <apex:outputText value="Is there a business center on the property?" />
+                         </apex:pageBlockSectionItem>
+                         <apex:inputField value="{!siteObject.Num_of_computers_in_the_business_center__c}" label="Number of computers in the business center" />
+                         <apex:pageBlockSectionItem >
+                             <apex:selectRadio value="{!siteObject.Busin_PCs_connect_2_exist_guestNetwork__c}" style="padding-left:50px">
+                                 <apex:selectOptions value="{!yesNoList}" /> 
+                             </apex:selectRadio>
+                             <apex:outputText value="Are the PCs connected to the existing guest network?" />
+                         </apex:pageBlockSectionItem>
+                         <apex:pageBlockSectionItem >
+                             <apex:selectRadio value="{!siteObject.Business_Center_Require_a_Public_ISP__c}" style="padding-left:50px">
+                                 <apex:selectOptions value="{!yesNoList}" />
+                             </apex:selectRadio>
+                             <apex:outputText value="Does the business center require a public ISP?" />
+                         </apex:pageBlockSectionItem>
+                         <apex:pageBlockSectionItem >
+                             <apex:selectRadio value="{!siteObject.Third_Party_Company_Manage_the_Computers__c}" style="padding-left:50px">
+                                 <apex:selectOptions value="{!yesNoList}" />
+                             </apex:selectRadio>
+                             <apex:outputText value="Does a third party company manage the computers?(if yes provide detailed info in the info in the additional comments section below)" />
+                         </apex:pageBlockSectionItem>
+                         <apex:pageBlockSectionItem >
+                             <apex:selectRadio value="{!siteObject.PCs_connected_to_the_SONIFI_network__c}" style="padding-left:50px">
+                                 <apex:selectOptions value="{!yesNoList}" /> 
+                             </apex:selectRadio>
+                             <apex:outputText value="Will the PC(s) be connected to the SONIFI network?" />
+                         </apex:pageBlockSectionItem>
+                		 <apex:outputPanel >Current CAT5 cable paths (if any; provide names, existing cables, etc.) <div style="clear:both"></div><apex:inputField value="{!siteObject.Business_Current_CAT5_cable_paths__c}" /></apex:outputPanel>
+                         <apex:inputField value="{!siteObject.Business_New_CAT5_cable_paths__c}" label="New CAT5 cable paths"/>
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection columns="1">
+                    	<apex:outputText value="Describe any necessary drops or uplinks to connect to an IDF or MDF" />
+                    	<apex:inputField style="width:80%" value="{!siteObject.Business_Drops_Uplinks_Connect_2_IDF_MDF__c}" label="" />
+                    	<apex:outputText value="Additional Comments" />
+                         <apex:inputField style="width:80%" value="{!siteObject.Business_Additional_Comments__c}" label=""/>
+                	</apex:pageBlockSection>
+                	<apex:pageBlockSection columns="2" title="Administrative Offices">
+                		<apex:pageBlockSectionItem >
+                             <apex:selectRadio value="{!siteObject.Admin_Sales_Office_Require_Connectivity__c}" style="padding-left:50px">
+                                 <apex:selectOptions value="{!yesNoList}" /> 
+                             </apex:selectRadio>
+                             <apex:outputText value="Does the administrative or sales office require connectivity?" />
+                         </apex:pageBlockSectionItem>
+                         <apex:inputField value="{!siteObject.Number_of_PCs_in_use__c}" />
+                         <apex:pageBlockSectionItem >
+                             <apex:selectRadio value="{!siteObject.Admin_PCs_Connect_2_Exist_Guestnetwork__c}" style="padding-left:50px">
+                                 <apex:selectOptions value="{!yesNoList}" /> 
+                             </apex:selectRadio>
+                             <apex:outputText value="Are the PCs connected to the existing guest network?" />
+                         </apex:pageBlockSectionItem>
+                         <apex:pageBlockSectionItem >
+                             <apex:selectRadio value="{!siteObject.Every_PC_Connected_2_Network_have_NIC__c}" style="padding-left:50px">
+                                 <apex:selectOptions value="{!yesNoList}" /> 
+                             </apex:selectRadio>
+                             <apex:outputText value="Does every PC that needs to be connected to the network have a NIC?" />
+                         </apex:pageBlockSectionItem>
+                         <apex:pageBlockSectionItem >
+                             <apex:selectRadio value="{!siteObject.Property_have_an_ISP__c}" style="padding-left:50px">
+                                 <apex:selectOptions value="{!yesNoList}" /> 
+                             </apex:selectRadio>
+                             <apex:outputText value="Does the property have an ISP?" />
+                         </apex:pageBlockSectionItem>
+                         <apex:inputField value="{!siteObject.ISP_Name__c}" />
+                         <apex:inputField value="{!siteObject.Service_Description__c}" label="Service Description(DSL, T1, T3)"/>
+                         <apex:pageBlockSectionItem >
+                             <apex:selectRadio value="{!siteObject.ISP_remain_after_install_remediation__c}" style="padding-left:50px">
+                                 <apex:selectOptions value="{!yesNoList}" /> 
+                             </apex:selectRadio>
+                             <apex:outputText value="Will the ISP remain after installation/ remediation?" />
+                         </apex:pageBlockSectionItem>
+                         <apex:outputPanel >IP Address Scheme(Static DHCP, etc)<div style="clear:both"></div><apex:inputField value="{!siteObject.IP_Address_Scheme__c}" /></apex:outputPanel>
+                         <apex:inputField value="{!siteObject.IP_Address_Range__c}" />
+                         <apex:inputField value="{!siteObject.DHCP_server_location_if_any__c}" />
+                         <apex:outputPanel >Describe any necessary drops or uplinks to connect to an IDF or MDF <div style="clear:both"></div><apex:inputField value="{!siteObject.Admin_Drops_Uplinks_Connect_2_IDF_MDF__c}" /></apex:outputPanel>
+                         <apex:outputPanel >Describe any servers or shared printers with static IP addresses <div style="clear:both"></div><apex:inputField value="{!siteObject.Servers_Shared_Printers_w_static_IP_Add__c}" /></apex:outputPanel>
+                         <apex:pageBlockSectionItem >
+                             <apex:selectRadio value="{!siteObject.Firewall_in_use__c}" style="padding-left:50px">
+                                 <apex:selectOptions value="{!yesNoList}" /> 
+                             </apex:selectRadio>
+                             <apex:outputText value="Is there a firewall in use?" />
+                         </apex:pageBlockSectionItem>
+                         <apex:pageBlockSectionItem >
+                             <apex:selectRadio value="{!siteObject.PMS_Billing_System_part_of_Network__c}" style="padding-left:50px">
+                                 <apex:selectOptions value="{!yesNoList}" /> 
+                             </apex:selectRadio>
+                             <apex:outputText value="Is the PMS/Billing system part of the network?" />
+                         </apex:pageBlockSectionItem>
+                         <apex:inputField value="{!siteObject.PMS_Type__c}" />
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection columns="1">
+                         <apex:inputField style="width:80%" value="{!siteObject.Admin_Additional_Comments__c}" label="Additional Comments" />
+                	</apex:pageBlockSection>
+                </apex:pageBlockSection>
+            </div>
+            
+            <!-- **********************************************************************************************************
+            *************************************************  TV Info    ************************************************
+            *************************************************************************************************************-->
+            <div  style="page-break-before:always" >
+                <apex:pageBlockSection columns="1" title="TV Information Center"  id="TVINFO">
+                    <apex:pageBlockSection title="TV Install General Info" columns="2">
+                        <apex:pageBlockSectionItem >
+                            <apex:selectRadio value="{!siteObject.Plan_To_Buy_new_TVs_in_the_Next_Year__c}" style="padding-left:50px">
+                                <apex:selectOptions value="{!yesNoList}" />
+                            </apex:selectRadio>
+                            <apex:outputText value="Does the property plan to purchase new TV's in the next Year?" />
+                        </apex:pageBlockSectionItem>
+                        <apex:inputText style="display:none" />
+                        <apex:pageBlockSectionItem >
+                            <apex:selectRadio value="{!siteObject.All_TVs_To_be_Replaced__c}" style="padding-left:50px">
+                                <apex:selectOptions value="{!yesNoList}" />
+                            </apex:selectRadio>
+                            <apex:outputText value="If yes, will all of the televisions be replaced?" />
+                        </apex:pageBlockSectionItem>
+                        <apex:inputText style="display:none" />
+                        <apex:inputField value="{!siteObject.All_TVs_to_be_Replaced_Date__c}" label="All of the TVs to be replaced by this date" />
+                        <apex:outputPanel >What areas of the property will be replaced? <div style="clear:both"></div><apex:inputField value="{!siteObject.Areas_of_the_Property_to_be_Replaced__c}" /></apex:outputPanel>
+                        <apex:pageBlockSectionItem >
+                            <apex:selectRadio value="{!siteObject.Contractor_Selected_for_the_TV_Install__c}" style="padding-left:50px">
+                                <apex:selectOptions value="{!yesNoList}" />
+                            </apex:selectRadio>
+                            <apex:outputText value="Has a contractor been selected for the TV Install?" />
+                        </apex:pageBlockSectionItem>
+                        <apex:inputField value="{!siteObject.Contractor_for_TV_Install__c}" label="Contractors Name" />
+                        <apex:pageBlockSectionItem >
+                            <apex:selectRadio value="{!siteObject.Sonifi_to_Bid_for_the_Installation__c}" style="padding-left:50px">
+                                <apex:selectOptions value="{!yesNoList}" />
+                            </apex:selectRadio>
+                            <apex:outputText value="Does hotel want SONIFI to bid the installation?" />
+                        </apex:pageBlockSectionItem>
+                        <apex:inputField value="{!siteObject.Hotel_Contact_Name__c}" />
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection columns="1" collapsible="false">
+                        <apex:inputTextArea style="width:80%"  value="{!siteObject.Comments_TV_Info__c}" label="Comments"/>
+                    </apex:pageBlockSection>
+                    <apex:repeat value="{!tvListGuest}" var="tv">   
+                        <apex:pageBlockSection columns="1" title="TV - {!tv.TV_Manufacturer__r.Name} " id="TVSECTION">
+                            <apex:pageBlockSection title="TV Type" columns="2" >
+                                <apex:inputText value="{!tv.TV_Manufacturer__r.Name}" />
+                            	<apex:inputText value="{!tv.TV_Model__r.Name}" />
+                                <apex:inputField value="{!tv.Chassis__c}" label="Chassis #"/>
+                                <apex:inputText value="{!tv.Year__c}" />
+                                <apex:pageBlockSectionItem >
+                                    <apex:selectRadio value="{!tv.ATSC_TV__c}" style="padding-left:50px">
+                                        <apex:selectOptions value="{!yesNoList}" />
+                                    </apex:selectRadio>
+                                    <apex:outputText value="Is this a ATSC TV?" />
+                                </apex:pageBlockSectionItem>
+                                <apex:inputField value="{!tv.Firmware_Version__c}" />
+                                <apex:outputText value="If Yes, enter the appropriate information below." />
+                                <apex:inputText style="display:none" />
+                                <apex:inputText value="{!tv.Digital_Format__c}" />
+                                <apex:inputText value="{!tv.Aspect_Ratio__c}" />
+                                <apex:pageBlockSectionItem >
+                                    <apex:selectRadio value="{!tv.Pro_Idiom_Compatible__c}" style="padding-left:50px">
+                                        <apex:selectOptions value="{!yesNoList}" />
+                                    </apex:selectRadio>
+                                    <apex:outputText value="Pro Idiom Compatible" />
+                                </apex:pageBlockSectionItem>
+                                <apex:inputText style="display:none" />
+                                <!-- <apex:inputText value="{!tv.Pro_Idiom_Compatible_Type__c}" label="If yes, What Type?"/> -->
+                            </apex:pageBlockSection>
+                            <apex:pageBlockSection title="Pillow Speaker Information" columns="2" >
+                                <apex:pageBlockSectionItem >
+                                    <apex:selectRadio value="{!tv.Pillow_Speaker__c}" style="padding-left:50px">
+                                        <apex:selectOptions value="{!yesNoList}" />
+                                    </apex:selectRadio>
+                                    <apex:outputText value="Pillow Speaker" />
+                                </apex:pageBlockSectionItem>
+                                <apex:inputText style="display:none" />
+                                <apex:inputText value="{!tv.Pillow_Speaker_Make__c}" />
+                                <apex:inputField value="{!tv.Pillow_Speaker_Model__c}" label="Pillow Speaker Model #" />
+                                <apex:inputField value="{!tv.Connector_Type__c}" label="Connector Type: " />
+                                <apex:inputText style="display:none" />
+                                <apex:pageBlockSectionItem >
+                                    <apex:selectRadio value="{!tv.Light_Control__c}" style="padding-left:50px">
+                                        <apex:selectOptions value="{!yesNoList}"/>
+                                    </apex:selectRadio>
+                                    <apex:outputText value="Light Control" />
+                                </apex:pageBlockSectionItem>
+                                <apex:inputText style="display:none" />
+                                <apex:pageBlockSectionItem >
+                                    <apex:selectRadio value="{!tv.Light_Control_Function__c}" style="padding-left:50px">
+                                        <apex:selectOptions value="{!yesNoList}" />
+                                    </apex:selectRadio>
+                                    <apex:outputText value="If Yes, do they function? (Refer to Pillow speaker Guide)" />
+                                </apex:pageBlockSectionItem>
+                                <apex:inputField value="{!tv.Light_Control_Num__c}" label="if yes, number of lights it controls" />
+                            </apex:pageBlockSection>
+                            <apex:pageBlockSection title="Nurse Call System Information" columns="2">
+                                <apex:inputField value="{!tv.Nurse_Call_System_Make__c}" />
+                                <apex:inputField value="{!tv.Nurse_Call_System_Model__c}"  />
+                                <apex:pageBlockSectionItem >
+                                    <apex:selectRadio value="{!tv.Bed_Side_W_TV_Control__c}" style="padding-left:50px">
+                                        <apex:selectOptions value="{!yesNoList}" />
+                                    </apex:selectRadio>
+                                    <apex:outputText value="Are the Bed Side rails equiped with TV controls?" />
+                                </apex:pageBlockSectionItem>
+                            </apex:pageBlockSection>
+                    		<apex:pageBlockSection columns="1">
+                                <apex:inputTextArea style="width:70%" value="{!tv.Bed_Side_Describe_Features__c}" label="If yes, describe features offered" />
+                            </apex:pageBlockSection> 
+                            <apex:pageBlockSection title="General TV Information" columns="2">
+                                <apex:pageBlockSectionItem >
+                                    <apex:selectRadio value="{!tv.Remote_Control__c}" style="padding-left:50px">
+                                        <apex:selectOptions value="{!yesNoList}"/>
+                                    </apex:selectRadio>
+                                    <apex:outputText value="Remote Control" />
+                                </apex:pageBlockSectionItem>
+                                <apex:pageBlockSectionItem >
+                                    <apex:selectRadio value="{!tv.MTI_Jack__c}" style="padding-left:50px">
+                                        <apex:selectOptions value="{!yesNoList}"/>
+                                    </apex:selectRadio>
+                                    <apex:outputText value="MTI Jack" />
+                                </apex:pageBlockSectionItem>
+                                <apex:pageBlockSectionItem >
+                                    <apex:selectRadio value="{!tv.Super_Port__c}" style="padding-left:50px">
+                                        <apex:selectOptions value="{!yesNoList}"/>
+                                    </apex:selectRadio>
+                                    <apex:outputText value="Super Port" />
+                                </apex:pageBlockSectionItem>
+                                <apex:pageBlockSectionItem >
+                                    <apex:selectRadio value="{!tv.Locked_Down__c}" style="padding-left:50px">
+                                        <apex:selectOptions value="{!yesNoList}"/>
+                                    </apex:selectRadio>
+                                    <apex:outputText value="Locked Down" />
+                                </apex:pageBlockSectionItem>
+                                <apex:inputText value="{!tv.Input_Connector__c}" />
+                                <apex:inputField value="{!tv.Existing_Terminal_Type__c}" label="Current Terminal Type:"/>
+                                <apex:inputField value="{!tv.Existing_LEC_Remote__c}" label="Current LEC Remote: " />
+                                <apex:inputField value="{!tv.Remote_Code__c}" label="Allegro Multi-Brand Code:" />
+                                <apex:inputField value="{!tv.Quantity__c}" label="Quantity(not including spares):" />
+                                <apex:inputField value="{!tv.Recommended_Terminal__c}"  />
+                                <apex:inputText value="{!tv.Built_In__c}" />
+                            </apex:pageBlockSection>
+                    		<apex:pageBlockSection columns="1">
+                                <apex:inputTextArea style="width:70%" value="{!tv.Comment_General__c}" label="Comments" />
+                            </apex:pageBlockSection>
+                            <apex:pageBlockSection title="Proposed Television Hardware Installation" columns="2">
+                                <apex:inputText value="{!tv.Type_of_TV_Mount__c}" />
+                                <apex:outputPanel >What length of coax/MTI will be needed from the TV to the Terminal?<div style="clear:both"></div><apex:inputText value="{!tv.Length_Of_Coax_MTI_From_TV_To_Terminal__c}" /></apex:outputPanel>
+                                <apex:outputPanel >What length of coax will be needed from the TV to the wall?<div style="clear:both"></div><apex:inputText value="{!tv.Length_Coax_From_TV_To_Wall__c}" /></apex:outputPanel>
+                                <apex:outputPanel >Total Estimated number of locations of this type<div style="clear:both"></div><apex:inputField value="{!tv.Estimated_Num_Of_Locations_This_Type__c}" /></apex:outputPanel>
+                                <apex:pageBlockSectionItem >
+                                	<apex:selectRadio value="{!tv.Concerns_Accessing_Wall_Plate__c}" style="padding-left:50px"> 
+                                		<apex:selectOptions value="{!yesNoList}"/>
+                                	</apex:selectRadio>
+                                	<apex:outputPanel >Is there any issues/concerns moving furniture in order to access the wall plate</apex:outputPanel>
+                                </apex:pageBlockSectionItem>
+                                <apex:inputField value="{!tv.Explain_Concerns_Accessing_Wall_Plate__c}" label="If Yes, Explain" />
+                            </apex:pageBlockSection>
+                    		<apex:pageBlockSection columns="1">
+                                <apex:inputTextArea value="{!tv.Comments__c}" style="width:80%" />
+                            </apex:pageBlockSection>
+                        </apex:pageBlockSection>
+                        <br />
+                    </apex:repeat>
+                <apex:outputPanel styleclass="noPrint" >
+                    <apex:commandButton value="Add 1 Row" action="{!addRowTVInfo}" rerender="TVINFO" >
+                        <apex:param assignTo="{!numRows}" value="1"/>
+                    </apex:commandButton>
+                    <apex:commandButton value="Add 3 Rows" action="{!addRowTVInfo}" rerender="TVINFO" >
+                        <apex:param assignTo="{!numRows}" value="3"/>
+                    </apex:commandButton>
+                    <apex:commandButton value="Add 5 Rows" action="{!addRowTVInfo}" rerender="TVINFO" >
+                        <apex:param assignTo="{!numRows}" value="5"/>
+                    </apex:commandButton>
+                </apex:outputPanel>
+                </apex:pageBlockSection>
+            </div> 
+            <!-- ****************************************************************************************************************
+            **********************************************  Public TV    ************************************************
+            *******************************************************************************************************************-->
+            <div  style="page-break-before:always" >
+                <apex:pageBlockSection columns="1" title="Public TV Location"  id="LocationInfo">
+                    <apex:pageMessages />
+                    <apex:pageBlockSection columns="2" collapsible="false" >
+                        <apex:outputField value="{!siteObject.Account_Name__c}" />
+                        <apex:outputField value="{!siteObject.Address__c}" />
+                    </apex:pageBlockSection>
+                    <apex:repeat value="{!id2TVLoc}" var="loc">  
+                        <apex:pageBlockSection columns="1" title="TV Location: {!id2TVLoc[loc].Name}">
+                            <apex:inputField value="{!id2TVLoc[loc].Name}" />
+                            <apex:inputField value="{!id2TVLoc[loc].FCO__c}" label="FCO(Fire Code Occupancy)"/>
+                            <apex:inputText style="width:70%" value="{!id2TVLoc[loc].Requested_Services_for_this_Area__c}" label="Requested Services for this Area"/>
+                            <apex:repeat value="{!locationId2NumTVs[loc]}" var="num">    
+                                <apex:pageBlockSection columns="1" title="TV Type {!id2TypeMap[loc][num].TV_Manufacturer__r.Name}" id="TVLOCSECTION">
+                                	<apex:pageBlockSection columns="2">
+	                                    <apex:inputField value="{!id2TypeMap[loc][num].Quantity__c}" />
+	                                    <apex:inputField value="{!id2TypeMap[loc][num].Public_Viewing_Location__c}" label="Location" />
+	                                    <apex:inputText value="{!id2TypeMap[loc][num].TV_Manufacturer__r.Name}"  />
+                       					<apex:inputText value="{!id2TypeMap[loc][num].TV_Model__r.Name}" />
+	                                    <apex:inputField value="{!id2TypeMap[loc][num].MPEG_2_4__c}" />
+	                                    <apex:pageBlockSectionItem >
+		                                    <apex:selectRadio value="{!id2TypeMap[loc][num].HDTV__c}" style="padding-left:50px">
+		                                        <apex:selectOptions value="{!yesNoList}" />
+		                                    </apex:selectRadio>
+		                                    <apex:outputText value="HDTV" />
+		                                </apex:pageBlockSectionItem>
+	                                    <apex:pageBlockSectionItem >
+		                                    <apex:selectRadio value="{!id2TypeMap[loc][num].HDMI__c}"  style="padding-left:50px">
+		                                        <apex:selectOptions value="{!yesNoList}" />
+		                                    </apex:selectRadio>
+		                                    <apex:outputText value="HDMI" />
+		                                </apex:pageBlockSectionItem>
+	                                    <apex:pageBlockSectionItem >
+		                                    <apex:selectRadio value="{!id2TypeMap[loc][num].MTI_Jack__c}"  style="padding-left:50px">
+		                                        <apex:selectOptions value="{!yesNoList}" />
+		                                    </apex:selectRadio>
+		                                    <apex:outputText value="MTI Jack" />
+		                                </apex:pageBlockSectionItem>
+	                                    <apex:pageBlockSectionItem >
+		                                    <apex:selectRadio value="{!id2TypeMap[loc][num].MTI_Slot__c}" style="padding-left:50px">
+		                                        <apex:selectOptions value="{!yesNoList}" />
+		                                    </apex:selectRadio>
+		                                    <apex:outputText value="MTI Slot" />
+		                                </apex:pageBlockSectionItem>
+	                                    <apex:pageBlockSectionItem >
+		                                    <apex:selectRadio value="{!id2TypeMap[loc][num].Pro_Idiom_Compatible__c}" style="padding-left:50px">
+		                                        <apex:selectOptions value="{!yesNoList}" />
+		                                    </apex:selectRadio>
+		                                    <apex:outputText value="Pro Idiom Compatible" />
+		                                </apex:pageBlockSectionItem>
+	                                    <apex:pageBlockSectionItem >
+	                                        <apex:outputPanel >Type of TV Mount</apex:outputPanel>
+	                                        <apex:inputText value="{!id2TypeMap[loc][num].Type_of_TV_Mount__c}" />
+	                                    </apex:pageBlockSectionItem>
+	                                </apex:pageBlockSection>
+	                    			<apex:pageBlockSection columns="1">
+	                    				<apex:outputText value="Notes(wall or furniture mounted, location within area, fitness machine TV, etc.)" />
+	                                    <apex:inputTextArea style="width:70%"  value="{!id2TypeMap[loc][num].Comments__c}" label="" />
+	                                </apex:pageBlockSection>
+	                            </apex:pageBlockSection>
+                            </apex:repeat>
+                            <apex:outputPanel styleclass="noPrint" >
+                                <apex:commandButton value="Add 1 TV Type To {!id2TVLoc[loc].Name}" action="{!addRowTVLoc}" rerender="LocationInfo" >
+                                    <apex:param assignTo="{!locationId}" value="{!loc}" name="locationId"/>
+                                    <apex:param assignTo="{!numRows}" value="1" name="numRow"/>
+                                </apex:commandButton>
+                                <apex:commandButton value="Add 3 TV Types To {!id2TVLoc[loc].Name}" action="{!addRowTVLoc}" rerender="LocationInfo" >
+                                    <apex:param assignTo="{!locationId}" value="{!loc}" name="locationId"/>
+                                    <apex:param assignTo="{!numRows}" value="3" name="numRow"/>
+                                </apex:commandButton>
+                                <apex:commandButton value="Add 5 TV Types To {!id2TVLoc[loc].Name}" action="{!addRowTVLoc}" rerender="LocationInfo" >
+                                    <apex:param assignTo="{!locationId}" value="{!loc}" name="locationId"/>
+                                    <apex:param assignTo="{!numRows}" value="5" name="numRow"/>
+                                </apex:commandButton>
+                            </apex:outputPanel>
+                        </apex:pageBlockSection>
+                        <apex:pageBlockSection title="If Using SONIFI SD/HD FTG, complete this section" columns="1">
+                            <apex:outputPanel >Location MATV/IDF Closet Feeding Area<div style="clear:both"></div><apex:inputField value="{!id2TVLoc[loc].Location_MATV_IDF_Closet_Feeding_Area__c}" style="width:70%"/></apex:outputPanel>
+                            <apex:outputPanel >MATV work required for this area if upgrading to existing HD content? (Describe in detail below)<div style="clear:both"></div><apex:inputTextArea style="width:70%" value="{!id2TVLoc[loc].MATV_Work_Required_Upgrade_2_HD_content__c}" /></apex:outputPanel> 
+                        </apex:pageBlockSection>
+                        <apex:pageBlockSection title="If requesting a quote for a separate DirecTV System with HD receivers, complete this section" >
+                            <apex:pageBlockSectionItem >
+                                <apex:selectRadio value="{!id2TVLoc[loc].Existing_HD_Dish_be_Used__c}" style="padding-left:50px">
+                                    <apex:selectOptions value="{!yesNoList}" />
+                                </apex:selectRadio>
+                                <apex:outputText value="Can existing HD Dish be used?" />
+                            </apex:pageBlockSectionItem>
+                            <apex:inputField value="{!id2TVLoc[loc].Dist_2_Pull_From_Headend_2_SWM_Switch__c}" label="Distance to Pull From Headend to SWM Switch"/>
+                            <apex:outputPanel >Describe cable run from headend to SWM Switch(4 RG cables)<div style="clear:both"></div><apex:inputField style="width:70%" value="{!id2TVLoc[loc].Cable_Run_From_Headend_to_SWM_Switch__c}" /></apex:outputPanel>
+                            <apex:outputPanel >Suggested Slimline Dish Location and Mounting Method (Make sure you have look angle for all birds!)<div style="clear:both"></div><apex:inputField value="{!id2TVLoc[loc].Sug_Slimline_Dish_Loc_Mounting_Method__c}" /></apex:outputPanel>
+                            <apex:outputPanel >Suggested location for SWM Switch: (If Required)<div style="clear:both"></div><apex:inputField value="{!id2TVLoc[loc].Sug_Location_for_SWM_Switch__c}" /></apex:outputPanel>
+                            <apex:outputPanel >Distance to Pull for cable run from dish to switch<div style="clear:both"></div><apex:inputField value="{!id2TVLoc[loc].Dist_of_Pull_for_Cable_Run_Dish_2_Switch__c}" /></apex:outputPanel> 
+                            <apex:outputPanel >Describe cable run from dish to switch: (4 RG-6 cables)<div style="clear:both"></div><apex:inputTextArea style="width:70%"  value="{!id2TVLoc[loc].Cable_Run_From_Dish_2_Switch__c}" /></apex:outputPanel>
+                            <apex:outputPanel >Comments<div style="clear:both"></div><apex:inputTextArea style="width:80%"  value="{!id2TVLoc[loc].Comments__c}" /></apex:outputPanel>
+                        </apex:pageBlockSection>
+                    </apex:repeat>
+                    <apex:outputPanel styleclass="noPrint" >
+                        <apex:commandButton value="Add 1 Location" action="{!addRowLocation}" rerender="LocationInfo" >
+                            <apex:param assignTo="{!numRows}" value="1"/>
+                        </apex:commandButton>
+                        <apex:commandButton value="Add 3 Locations" action="{!addRowLocation}" rerender="LocationInfo" >
+                            <apex:param assignTo="{!numRows}" value="3"/>
+                        </apex:commandButton>
+                        <apex:commandButton value="Add 5 Locations" action="{!addRowLocation}" rerender="LocationInfo" >
+                            <apex:param assignTo="{!numRows}" value="5"/>
+                        </apex:commandButton>
+                   </apex:outputPanel>
+                </apex:pageBlockSection>
+            </div>
+            <!-- ****************************************************************************************************************
+            **********************************************  Rack Location    ************************************************
+            *******************************************************************************************************************-->
+            <div style="page-break-before:always" >
+                <apex:pageBlockSection columns="1"  id="RackLocation">
+                    <apex:pageBlockSection columns="2" collapsible="false" >
+                        <apex:pageBlockSection columns="1">  
+                            <apex:pageBlockSectionItem labelStyle="width:30%">  
+                                <apex:outputText value="Account Name" />
+                                <apex:outputField value="{!siteObject.Account_Name__c}" />
+                            </apex:pageBlockSectionItem>
+                            <apex:pageBlockSectionItem labelStyle="width:30%">  
+                                <apex:outputText value="Number of Rooms" />
+                                <apex:outputField value="{!siteObject.Number_of_Rooms__c}" />
+                            </apex:pageBlockSectionItem>
+                        </apex:pageBlockSection>
+                        <apex:outputField value="{!siteObject.Address__c}" />                       
+                    </apex:pageBlockSection> 
+                    <apex:repeat value="{!rackLocList}" var="rack">
+                        <apex:pageBlockSection title="Rack Location: {!rack.Existing_Rack_Room_Location__c}" columns="2">
+                            <apex:inputField style="width:50%" value="{!rack.Existing_Rack_Room_Location__c}" />
+                            <apex:inputField style="width:50%" value="{!rack.Proposed_Rack_Room_Location__c}" />
+                            <apex:inputField style="width:50%" value="{!rack.LxWxH__c}" />
+                            <apex:outputText style="display:none" />
+                            <apex:inputField style="width:50%" value="{!rack.Number_of_Existing_iTV_FTG_Cabinets__c}" />
+                            <apex:pageBlockSectionItem >
+                                <apex:selectRadio value="{!rack.Headend_in_Secured_Non_Public_Area__c}" style="padding-left:50px">
+                                    <apex:selectOptions value="{!yesNoList}" />
+                                </apex:selectRadio>
+                                <apex:outputText value="Is the proposed headend room located in a secured, non-public area?" />
+                            </apex:pageBlockSectionItem>
+                            <apex:pageBlockSectionItem >
+                                <apex:selectRadio value="{!rack.Adequate_Electrical_Power_In_Headend__c}" style="padding-left:50px">
+                                    <apex:selectOptions value="{!yesNoList}" />
+                                </apex:selectRadio>
+                                <apex:outputText value="Is there adequate electrical power in the proposed headend Room?" />
+                            </apex:pageBlockSectionItem>
+                            <apex:inputField style="width:50%" value="{!rack.Type_of_Circuit_Installed__c}" label="What type of circuit is installed"/>
+                            <apex:pageBlockSectionItem >
+                                <apex:selectRadio value="{!rack.Proposed_Room_Raised_Or_False_Floor__c}" style="padding-left:50px">
+                                    <apex:selectOptions value="{!yesNoList}" />
+                                </apex:selectRadio>
+                                <apex:outputText value="Does the proposed room have a raised or false floor?" />
+                            </apex:pageBlockSectionItem>
+                            <apex:pageBlockSectionItem >
+                                <apex:selectRadio value="{!rack.Twist_Lock_Plugs_Installed_on_Racks__c}" style="padding-left:50px">
+                                    <apex:selectOptions value="{!yesNoList}" />
+                                </apex:selectRadio>
+                                <apex:outputText value="At upgrades, are twist lock plugs installed on the racks and receptacles?" />
+                            </apex:pageBlockSectionItem>
+                            </apex:pageBlockSection>
+                        <apex:pageBlockSection columns="1" collapsible="false">
+                        	<apex:outputText value="List the proposed Powerstation and Printer Location?(Keep in mind that Networked PC access will be used and it would be best to keep it close to the rack for Field Service use)" />
+                            <apex:inputField style="width:80%" value="{!rack.Proposed_Power_and_Printer_Location__c}" label=""/>
+                            <apex:outputPanel >Comments:(Describe room's location, rack location within room and available space for additional racks)</apex:outputPanel>
+                            <apex:inputTextArea style="width:80%" value="{!rack.Comments__c}" label=""/>
+                        </apex:pageBlockSection>
+                        <apex:pageBlockSection columns="2" collapsible="false">
+                            <apex:pageBlockSectionItem >
+                                <apex:selectRadio value="{!rack.Headend_Adequately_Controlled__c}" style="padding-left:50px">
+                                    <apex:selectOptions value="{!yesNoList}" />
+                                </apex:selectRadio>
+                                <apex:outputText value="Is the headend adequately climate controlled to maintain 50°- 75°F year round?" />
+                            </apex:pageBlockSectionItem>
+                            <apex:inputText value="{!rack.Type_of_Cooling_System_in_Rack_Room__c}" label="What type of cooling system is in the rack room?"  />
+                            <apex:pageBlockSectionItem >
+                                <apex:selectRadio value="{!rack.Rack_Room_Outside_Wall__c}" style="padding-left:50px">
+                                    <apex:selectOptions value="{!yesNoList}" />
+                                </apex:selectRadio>
+                                <apex:outputText value=" Does the rack room have an outside wall?" />
+                            </apex:pageBlockSectionItem>
+                            <apex:pageBlockSectionItem >
+                                <apex:selectRadio value="{!rack.Room_Have_Condensation_to_be_Drained__c}" style="padding-left:50px">
+                                    <apex:selectOptions value="{!yesNoList}" />
+                                </apex:selectRadio>
+                                <apex:outputText value="Does the room have any way for condensation to be drained?" />
+                            </apex:pageBlockSectionItem>
+                            <apex:pageBlockSectionItem >
+                                <apex:selectRadio value="{!rack.Rack_Room_Have_Dedicated_Thermostat__c}" style="padding-left:50px">
+                                    <apex:selectOptions value="{!yesNoList}" />
+                                </apex:selectRadio>
+                                <apex:outputText value="Does the rack room have a Dedicated Thermostat?" />
+                            </apex:pageBlockSectionItem>
+                         </apex:pageBlockSection>
+                        <apex:pageBlockSection columns="1" collapsible="false">
+                        	<apex:outputPanel >Surveyor, please provide recommendations on how the room can be cooled</apex:outputPanel>
+                            <apex:inputTextArea style="width:80%"  value="{!rack.Surveyor_Recommendations__c}" label=""/>
+                            <apex:outputPanel >
+                                Note: If the rack room exceeds 75°F during the survey, you must bring this to the attention of the General Manager and Chief Engineer and agree on a resolution to properly cool the room.
+                            </apex:outputPanel>
+                            <apex:inputtext style="display:none" />
+                            <apex:outputPanel >
+                                Please note that in the state of CA all Healthcare racks and satellite dishes must be fastened directly to the floor to meet OSHPD regulations.
+                            </apex:outputPanel>
+                        </apex:pageBlockSection>
+                    </apex:repeat>
+                    <apex:outputPanel styleclass="noPrint" >
+                        <apex:commandButton value="Add 1 Row" rerender="RackLocation" action="{!addRowRackLoc}">
+                            <apex:param assignTo="{!numRows}" value="1"/>
+                        </apex:commandButton>
+                        <apex:commandButton value="Add 3 Rows" rerender="RackLocation" action="{!addRowRackLoc}">
+                            <apex:param assignTo="{!numRows}" value="3"/>
+                        </apex:commandButton>
+                        <apex:commandButton value="Add 5 Rows" rerender="RackLocation" action="{!addRowRackLoc}">
+                            <apex:param assignTo="{!numRows}" value="5"/>
+                        </apex:commandButton>
+                    </apex:outputPanel>
+                </apex:pageBlockSection>
+             </div>
+             <!-- ************************************************************************************************************
+            ********************************************  Property Sign Off    **********************************************
+            ***************************************************************************************************************-->
+            <div  style="page-break-before:always" >
+                <apex:pageBlockSection columns="1" title="Property Sign Off" id="Property">
+                    <apex:pageBlockSection columns="2" collapsible="false">
+                        <apex:outputField value="{!siteObject.Site__c}" />
+                         <apex:outputField value="{!siteObject.Number_of_Rooms__c}" />
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection columns="1" collapsible="false">
+                        <apex:pageBlockSectionItem >
+                            <apex:outputText value="Proposed Location of iTV Racks" />
+                            <apex:inputText style="width:70%"/>
+                        </apex:pageBlockSectionItem>
+                        <apex:pageBlockSectionItem >
+                            <apex:outputText value="Proposed Location of FTG Racks" />
+                            <apex:inputText style="width:70%"/>
+                        </apex:pageBlockSectionItem>
+                        <apex:pageBlockSection columns="2" collapsible="false">
+                            <apex:outputText value="Who is Responsible for Rack Connectivity" />
+                            <apex:pageBlockSectionItem >
+                            	<apex:pageBlockSectionItem >
+                            		<apex:outputText value="Property" />
+                            		<apex:inputCheckBox />
+                            	</apex:pageBlockSectionItem>
+                            	<apex:pageBlockSectionItem >
+                            		<apex:outputText value="SONIFI" />
+                            		<apex:inputCheckBox />
+                            	</apex:pageBlockSectionItem>
+                            </apex:pageBlockSectionItem>
+                        </apex:pageBlockSection>
+                        <apex:outputPanel >
+                            Note:  The connectivity form must be completed and returned to SONIFI as soon as possible or this could result in delays to the installation start date. Check with IM/PM or Coordinator for your region on who is responsible for Connectivity.
+                        </apex:outputPanel>
+                        <apex:outputText value="Rack Room Work Required" />
+                        <apex:inputField style="width:80%" value="{!siteObject.Rack_Room_Work_Required__c}" label=""/>
+                        <apex:outputText value="Air Conditioning Work Required" />
+                        <apex:inputField style="width:80%" value="{!siteObject.Air_Conditioning_Work_Required__c}" label=""/>
+                        <apex:outputPanel >
+                            Headend must be adequately climate controlled to maintain between 50°-75°F year round
+                        </apex:outputPanel>
+                         <apex:outputText value="Electrical Circuits Required" />
+                         <apex:inputField style="width:80%" value="{!siteObject.Electrical_Circuits_Required__c}" label=""/>
+                         <apex:outputText value="Proposed Dish/Antenna Locations" />
+                         <apex:inputField style="width:80%" value="{!siteObject.Proposed_Dish_Antenna_Locations__c}" label=""/>
+                         <apex:outputText value="Conduit to be Installed by Hotel" />
+                         <apex:inputField style="width:80%" value="{!siteObject.Conduit_to_be_Installed_by_Hotel__c}" label=""/>
+                         <apex:outputText value="Cable Company work Required: (Hotel must initiate work with Cable Company)" />
+                         <apex:inputField style="width:80%" value="{!siteObject.Cable_Company_work_Required__c}" label=""/>
+                         <apex:outputText value="Misc. Requirements" />
+                         <apex:inputField style="width:80%" value="{!siteObject.Misc_Requirements__c}" label=""/>
+                        <apex:outputPanel >
+                            By signing this form, you acknowledge that you have received a copy of SONIFI's rack room requirements and are aware of any outstanding issues that the SONIFI site survey crew found for the proposed rack room location, dish location and other items listed above.
+                        </apex:outputPanel>
+                        <apex:pageBlockSectionItem >
+                            <apex:outputText value="Property Signature" />
+                            <apex:outputText value="____________________________________________________________________________________________"/>
+                        </apex:pageBlockSectionItem>
+                        <apex:pageBlockSectionItem >
+                            <apex:outputText value="SONIFI Surveyor Signature" />
+                            <apex:outputText value="____________________________________________________________________________________________"/>
+                        </apex:pageBlockSectionItem>
+                    </apex:pageBlockSection>
+                </apex:pageBlockSection>
+            </div>
+            <!-- ****************************************************************************************************************
+            **********************************************  FTG-GP Lineups    ************************************************
+            *******************************************************************************************************************-->
+            <div  style="page-break-before:always" >
+                <apex:pageBlockSection columns="1" title="FTG-GP Lineups" id="Lineups" >
+                    <apex:pageBlockSection columns="2" title="FTG Rack Information" collapsible="false">
+                        <apex:inputField value="{!siteObject.FTG_Headend_Room_Location__c}" />
+                        <apex:inputText style="display:none" />
+                        <apex:pageBlockSectionItem >    
+                            <apex:selectRadio value="{!siteObject.FTG_headend_Same_Loc_as_iTV__c}" style="padding-left:50px">
+                                <apex:selectOptions value="{!yesNoList}" />
+                            </apex:selectRadio>
+                            <apex:outputText value="Will the FTG Headend be in the same location as the iTV headend?" />
+                        </apex:pageBlockSectionItem>
+                        <apex:outputPanel >If no, describe the cable run / distance from the FTG Headend to the Mix Point / iTV Headend <div style="clear:both"></div><apex:inputTextArea style="width:85%"  value="{!siteObject.Describe_Cable_From_FTG_2_iTV__c}" /></apex:outputPanel>
+                        <apex:inputField value="{!siteObject.Number_of_Existing_FTG_Racks__c}" />
+                        <apex:pageBlockSectionItem >    
+                            <apex:selectRadio value="{!siteObject.Hotel_Networks_Installed__c}" style="padding-left:50px">
+                                <apex:selectOptions value="{!yesNoList}" />
+                            </apex:selectRadio>
+                            <apex:outputText value="Hotel Networks Installed" />
+                        </apex:pageBlockSectionItem>
+                    </apex:pageBlockSection>    
+                    <apex:pageBlockSection columns="1" collapsible="false">  
+                        <apex:inputTextArea style="width:85%"  value="{!siteObject.FTG_Lineup_Comments__c}" label="Comments" />
+                    </apex:pageBlockSection>
+                    <apex:outputPanel >
+                        List all of the channels currently used in the system, and enter the signal level of each channel at the mix-point. Label the inserted modulator and indicate its level. Tip: Contact SONIFI for the modulator channel number you need to insert.
+                    </apex:outputPanel>
+                    <apex:outputPanel >
+                        If this is a cable company site, please list all available channels, not just the ones that are being passed through the filters. (See below lineup for additional information to complete)
+                    </apex:outputPanel>
+                    <apex:pageBlockSection columns="3" >
+                        <apex:panelGrid columns="4" style="text-align:center;">
+                            <apex:outputText ><h5>CH</h5></apex:outputText>
+                            <apex:outputText ><h5>Network</h5></apex:outputText>
+                            <apex:outputText ><h5>Call Letters</h5></apex:outputText>
+                            <apex:outputText ><h5>dBmV</h5></apex:outputText>
+                            <apex:repeat value="{!firstColNum}" var="fCol">
+                                <tr>
+                                    <td><apex:outputText > {!int2FTGMap[fCol].Channel__c} </apex:outputText></td>
+                                    <td><apex:inputField value="{!int2FTGMap[fCol].Network__c}" style="width:50px;"/></td>
+                                    <td><apex:inputField value="{!int2FTGMap[fCol].Call_Letters__c}" style="width:50px;" /></td>
+                                    <td><apex:inputField value="{!int2FTGMap[fCol].dBmV__c}"  style="width:50px;"/></td>
+                                </tr>
+                            </apex:repeat>
+                        </apex:panelGrid>
+                        <apex:panelGrid columns="4" style="text-align:center;">
+                            <apex:outputText ><h5>CH</h5></apex:outputText>
+                            <apex:outputText ><h5>Network</h5></apex:outputText>
+                            <apex:outputText ><h5>Call Letters</h5></apex:outputText>
+                            <apex:outputText ><h5>dBmV</h5></apex:outputText>
+                            <apex:repeat value="{!secondColNum}" var="sCol">
+                                <tr>
+                                    <td><apex:outputText > {!int2FTGMap[sCol].Channel__c} </apex:outputText></td>
+                                    <td><apex:inputField value="{!int2FTGMap[sCol].Network__c}" style="width:50px;"/></td>
+                                    <td><apex:inputField value="{!int2FTGMap[sCol].Call_Letters__c}" style="width:50px;" /></td>
+                                    <td><apex:inputField value="{!int2FTGMap[sCol].dBmV__c}"  style="width:50px;"/></td>
+                                </tr>
+                            </apex:repeat>
+                        </apex:panelGrid>
+                        <apex:panelGrid columns="4" style="text-align:center;">
+                            <apex:outputText ><h5>CH</h5></apex:outputText>
+                            <apex:outputText ><h5>Network</h5></apex:outputText>
+                            <apex:outputText ><h5>Call Letters</h5></apex:outputText>
+                            <apex:outputText ><h5>dBmV</h5></apex:outputText>
+                            <apex:repeat value="{!thirdColNum}" var="tCol">
+                                <tr>
+                                    <td><apex:outputText > {!int2FTGMap[tCol].Channel__c} </apex:outputText></td>
+                                    <td><apex:inputField value="{!int2FTGMap[tCol].Network__c}" style="width:50px;"/></td>
+                                    <td><apex:inputField value="{!int2FTGMap[tCol].Call_Letters__c}" style="width:50px;" /></td>
+                                    <td><apex:inputField value="{!int2FTGMap[tCol].dBmV__c}"  style="width:50px;"/></td>
+                                </tr>
+                            </apex:repeat>
+                        </apex:panelGrid>
+                    </apex:pageBlockSection>
+                </apex:pageBlockSection>
+            </div>
+           
+            <!-- ****************************************************************************************************************
+            **********************************************  Satellite Info    ************************************************ 
+            *******************************************************************************************************************-->
+            <div  style="page-break-before:always" >
+                <apex:pageBlockSection columns="1" title="Satellite Info" id="Satellite_Info" >
+                    <apex:pageBlockSection columns="2" collapsible="false">
+                        <apex:outputPanel >Approximately how many square feet are available for dish mounts?<div style="clear:both"></div><apex:inputField value="{!siteObject.Square_Feet_Available_for_Dish_Mounts__c}" /></apex:outputPanel>
+                        <apex:outputPanel >Describe the type of roof (i.e. clay, peaked, etc.):<div style="clear:both"></div><apex:inputTextArea style="width:70%"  value="{!siteObject.Describe_the_Type_of_Roof__c}" /></apex:outputPanel>
+                        <apex:pageBlockSectionItem >
+                            <apex:selectRadio value="{!siteObject.Cabling_from_Antennas_and_or_Satellite__c}" style="padding-left:50px">
+                                <apex:selectOptions value="{!yesNoList}" />
+                            </apex:selectRadio>
+                            <apex:outputText value="Is there a physical route for cabling from antennas and/or the satellite dish?" />
+                        </apex:pageBlockSectionItem>
+                        <apex:pageBlockSectionItem >
+                            <apex:selectRadio value="{!siteObject.Cabling_to_the_Mix_Point_Location__c}" style="padding-left:50px">
+                                <apex:selectOptions value="{!yesNoList}" />
+                            </apex:selectRadio>
+                            <apex:outputText value="Is there a physical route for cabling to the mix point location?" />
+                        </apex:pageBlockSectionItem>
+                        <apex:pageBlockSectionItem >
+                            <apex:selectRadio value="{!siteObject.Cable_Between_FTG_and_iTV_Headend_Loc__c}" style="padding-left:50px">
+                                <apex:selectOptions value="{!yesNoList}" />
+                            </apex:selectRadio>
+                            <apex:outputText value="If No, is there a physical route for cabling between the FTG and iTV headend locations?" />
+                        </apex:pageBlockSectionItem>
+                        <apex:outputPanel >If No, What is the distance between the two headend Locations?<div style="clear:both"></div><apex:inputField value="{!siteObject.Distance_Between_the_Two_Headend_Loc__c}"/></apex:outputPanel>
+                        <apex:pageBlockSectionItem >
+                            <apex:selectRadio value="{!siteObject.FTG_and_iTV_Headend_in_Same_Location__c}" style="padding-left:50px">
+                                <apex:selectOptions value="{!yesNoList}" />
+                            </apex:selectRadio>
+                            <apex:outputText value="Will the FTG Headend be in the same location as the iTV headend?" />
+                        </apex:pageBlockSectionItem>
+                        <apex:outputPanel >If No, describe the FTG headend room and its location<div style="clear:both"></div><apex:inputTextArea style="width:70%"  value="{!siteObject.Describe_FTG_Headend_Room_and_Location__c}" /></apex:outputPanel>
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection columns="2"  title="Existing Satellite Dish Installation Information">
+                        <apex:inputField style="width:50%" value="{!siteObject.Describe_Existing_Satellite_Dish_Loc__c}" label="Describe the existing satellite dish location" />
+                        <apex:inputField style="width:50%" value="{!siteObject.Existing_Dish_Type_s__c}" />
+                        <apex:inputField value="{!siteObject.Existing_Dish_Sizes__c}" />
+                        <apex:pageBlockSectionItem >
+                            <apex:selectRadio value="{!siteObject.Existing_Dish_a_5_LNB__c}" style="padding-left:50px">
+                                <apex:selectOptions value="{!yesNoList}" />
+                            </apex:selectRadio>
+                            <apex:outputText value="Is the existing dish a 5 LNB?" />
+                        </apex:pageBlockSectionItem>
+                        <apex:outputPanel >What is the outside diameter of the existing mount pole?<div style="clear:both"></div><apex:inputField value="{!siteObject.Outside_Diameter_on_Existing_Mount_Pole__c}" /></apex:outputPanel>
+                        <apex:inputField style="width:50%" value="{!siteObject.Describe_Existing_Satellite_Dish_Mount__c}" label="Describe the existing Satellite dish mount"/>
+                        <apex:inputField value="{!siteObject.Number_of_Existing_Downleads__c}" />
+                        <apex:pageBlockSectionItem >
+	                    <apex:selectRadio value="{!siteObject.In_Conduit__c}" style="padding-left:50px">
+	                        <apex:selectOptions value="{!yesNoList}" />
+	                    </apex:selectRadio>
+	                    <apex:outputPanel >In Conduit</apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                        <apex:inputField value="{!siteObject.Cable_Type__c}" />
+                        <apex:inputField value="{!siteObject.Cable_Type_Length__c}" />
+                        <apex:inputField value="{!siteObject.Cable_Type_Condition__c}" />
+                        <apex:pageBlockSectionItem >
+                            <apex:selectRadio value="{!siteObject.Dish_Location_Easily_Accessible__c}" style="padding-left:50px">
+                                <apex:selectOptions value="{!yesNoList}" />
+                            </apex:selectRadio>
+                            <apex:outputText value="Is the dish location easily accesible?" />
+                        </apex:pageBlockSectionItem>
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection collapsible="false" columns="1">
+                        <apex:outputText value="If No, what method is used to access the dishes?" />
+                        <apex:inputField style="width:80%" value="{!siteObject.Method_Used_to_Access_the_Dishes__c}" label=""/>
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection columns="2" title="New DirecTV and IDS Dish Mount Information" >
+                        <apex:outputPanel >What type of mounting system is required? <apex:inputText value="{!siteObject.Type_of_Mounting_System_Required__c}" /></apex:outputPanel>
+                        <apex:inputText style="display:none" />
+                        <apex:pageBlockSectionItem >
+                            <apex:selectRadio value="{!siteObject.Proposed_Location_Easily_Accessible__c}" style="padding-left:50px">
+                                <apex:selectOptions value="{!yesNoList}" />
+                            </apex:selectRadio>
+                        	<apex:outputText value="Is the proposed location easily accessible?" />
+                        </apex:pageBlockSectionItem>
+                        <apex:outputPanel >If No, what method is used to access the location?<div style="clear:both"></div><apex:inputField value="{!siteObject.Method_Used_to_Access_the_Location__c}" /></apex:outputPanel>
+                        <apex:pageBlockSectionItem >
+                            <apex:selectRadio value="{!siteObject.Roof_Access_Work_for_Trans_Sat_Dishes__c}" style="padding-left:50px">
+                                <apex:selectOptions value="{!yesNoList}" />
+                            </apex:selectRadio>
+                            <apex:outputText value="Will the roof access accommodate the transportation of satellite dishes?" />
+                        </apex:pageBlockSectionItem>
+                        <apex:outputPanel >If No, describe the method that will be used to transport satellite dishes:<div style="clear:both"></div><apex:inputField value="{!siteObject.Method_Used_to_Transport_Sat_Dishes__c}" /></apex:outputPanel>
+                        <apex:pageBlockSectionItem >
+                            <apex:selectRadio value="{!siteObject.Roof_Penetrations_be_Needed__c}" style="padding-left:50px">
+                                <apex:selectOptions value="{!yesNoList}" />
+                            </apex:selectRadio>
+                            <apex:outputText value="Will roof penetration be needed?" />
+                        </apex:pageBlockSectionItem>
+                        <apex:inputField value="{!siteObject.Explain_Reason_for_Roof_Penetration__c}"  />
+                        <apex:inputField style="width:50%" value="{!siteObject.Describe_the_Tether_Locations__c}" />
+                        <apex:inputField style="width:50%" value="{!siteObject.Describe_Proposed_Dish_Location__c}" label="Describe the propsed dish Location"/>
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection columns="1" collapsible="false" title="*NOTE Healthcare Dishes in the state of CA must be permenantly bolted down, or a wall mount used for OSHPD (earthquake) regulations.">
+                        <apex:inputField value="{!siteObject.Verify_Look_Angle_for_Each_Satellite__c}" />
+                        <apex:inputField style="width:80%" value="{!siteObject.List_Any_Obstructions__c}" />
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection columns="1" title="Satellite Down Lead Information">
+                    	<apex:pageBlockSection columns="2">
+	                        <apex:pageBlockSectionItem >
+	                            <apex:selectRadio value="{!siteObject.DownLeads_RG_6_or_Greater__c}" style="padding-left:50px">
+	                                <apex:selectOptions value="{!yesNoList}" />
+	                            </apex:selectRadio>
+	                            <apex:outputText value="Are the down leads RG-6 or Greater?" />
+	                        </apex:pageBlockSectionItem>
+	                        <apex:inputText style="display:none" />
+	                        <apex:pageBlockSectionItem >
+	                            <apex:selectRadio value="{!siteObject.One_Down_Lead_per_Antenna_And_One_Spare__c}" style="padding-left:50px">
+	                                <apex:selectOptions value="{!yesNoList}" />
+	                            </apex:selectRadio>
+	                            <apex:outputText value="Is there one down lead per antenna AND one spare?" />
+	                        </apex:pageBlockSectionItem>
+	                        <apex:outputText style="display:none" />
+	                        <apex:outputPanel >If No, how many new downleads will be required?<div style="clear:both"></div><apex:inputField value="{!siteObject.New_Downleads_Required__c}" /></apex:outputPanel>
+	                        <apex:pageBlockSectionItem >
+	                            <apex:selectRadio value="{!siteObject.External_Cable_Installed_in_Conduit__c}" style="padding-left:50px">
+	                                <apex:selectOptions value="{!yesNoList}" />
+	                            </apex:selectRadio>
+	                            <apex:outputText value="Is all external cable installed in conduit?" />
+	                        </apex:pageBlockSectionItem>
+	                        <apex:pageBlockSectionItem >
+	                            <apex:selectRadio value="{!siteObject.New_Roof_Conduit_Required__c}" style="padding-left:50px">
+	                                <apex:selectOptions value="{!yesNoList}" />
+	                            </apex:selectRadio>
+	                            <apex:outputText value="Is new roof conduit required" />
+	                        </apex:pageBlockSectionItem>
+	                        <apex:inputField style="width:50%" value="{!siteObject.Proposed_Conduit_Size_Length__c}" label="Proposed conduit size/length" />
+	                        <apex:inputField value="{!siteObject.Approximate_Length_of_Cable_Run__c}" />
+	                    </apex:pageBlockSection>
+                        <apex:outputPanel >Describe the Cable Runs<div style="clear:both"></div><apex:inputTextArea style="width:80%" value="{!siteObject.Describe_the_Cable_Runs__c}" /></apex:outputPanel>
+                        <apex:outputPanel >Satellite Info Comments<div style="clear:both"></div><apex:inputTextArea style="width:80%" value="{!siteObject.Satellite_Info_Comments__c}" /></apex:outputPanel>
+                    </apex:pageBlockSection>
+                </apex:pageBlockSection>
+            </div>
+            <!-- ****************************************************************************************************************
+            **********************************************  Digital Off-Air    ************************************************ 
+            *******************************************************************************************************************-->
+            <div  style="page-break-before:always" >
+                <apex:pageBlockSection columns="1" title="Digital Off-Air" id="Digital_Off_Air" >
+                    <apex:pageBlockTable value="{!digitalList}" var="digital" id="DIGITAL">
+                        <apex:column headerValue="Call Sign">
+                            <apex:inputField value="{!digital.Call_Sign__c}"  style="width:65px"/>
+                        </apex:column>
+                        <apex:column headerValue="Channel">
+                            <apex:inputField value="{!digital.Channel__c}" style="width:65px"/>
+                        </apex:column>
+                        <apex:column headerValue="Network">
+                            <apex:inputField value="{!digital.Network__c}" style="width:65px"/>
+                        </apex:column>
+                        <apex:column headerValue="Azimuth">
+                            <apex:inputField value="{!digital.Azimuth__c}" style="width:65px"/>
+                        </apex:column>
+                        <apex:column headerValue="Distance">
+                            <apex:inputField value="{!digital.Distance__c}" style="width:65px"/>
+                        </apex:column>
+                        <apex:column headerValue="Frequency Assignment">
+                            <apex:inputField value="{!digital.Frequency_Assignment__c}" style="width:65px"/>
+                        </apex:column>
+                        <apex:column headerValue="MER">
+                            <apex:inputField value="{!digital.MER__c}" style="width:65px"/>
+                        </apex:column>
+                        <apex:column headerValue="dBmV">
+                            <apex:inputField value="{!digital.dBmV__c}" style="width:65px"/>
+                        </apex:column>
+                        <apex:column headerValue="Ant. Type">
+                            <apex:inputField value="{!digital.Ant_Type__c}" style="width:65px"/>
+                        </apex:column>
+                        <apex:column headerValue="Comments">
+                            <apex:inputField value="{!digital.Comments__c}" style="width:65px"/>
+                        </apex:column>
+                    </apex:pageBlockTable>
+                    <apex:outputPanel styleclass="noPrint" >
+                        <apex:commandButton value="Add 1 Row" action="{!addDigitalOffAir}" rerender="DIGITAL">
+                            <apex:param assignTo="{!numRows}" value="1"/>
+                        </apex:commandButton>
+                        <apex:commandButton value="Add 5 Rows" action="{!addDigitalOffAir}" rerender="DIGITAL">
+                            <apex:param assignTo="{!numRows}" value="5"/>
+                        </apex:commandButton>
+                        <apex:commandButton value="Add 10 Rows" action="{!addDigitalOffAir}" rerender="DIGITAL">
+                            <apex:param assignTo="{!numRows}" value="10"/>
+                        </apex:commandButton>
+                    </apex:outputPanel>
+                    <apex:pageBlockSection columns="1" collapsible="false">
+                    	 <apex:outputText value="Describe Location for Antennas" />
+                         <apex:inputTextArea style="width:80%"  value="{!siteObject.Describe_Location_for_Antennas__c}" label=""/>
+                         <apex:outputText value="Describe Mounting Method for Antennas" />
+                         <apex:inputTextArea style="width:80%"  value="{!siteObject.Describe_Mounting_Method_for_Antennas__c}" label=""/>
+                     </apex:pageBlockSection>
+                     <apex:pageBlockSection columns="2" collapsible="false">
+                         <apex:inputField value="{!siteObject.Total_Num_of_Downleads_Required__c}" label="Total Number Downleads Required" />
+                         <apex:inputText value="{!siteObject.Downlead_Size__c}" />
+                         <apex:inputField value="{!siteObject.Total_Distance_of_Downleads__c}" />
+                         <apex:pageBlockSectionItem >    
+                            <apex:selectRadio value="{!siteObject.Pre_Amps_Required__c}" style="padding-left:50px">
+                                <apex:selectOptions value="{!yesNoList}" />
+                            </apex:selectRadio>
+                            <apex:outputText value="Pre Amps Required" />
+                        </apex:pageBlockSectionItem>
+                         <apex:pageBlockSectionItem >    
+                            <apex:selectRadio value="{!siteObject.New_Conduit_Required__c}" style="padding-left:50px">
+                                <apex:selectOptions value="{!yesNoList}" />
+                            </apex:selectRadio>
+                            <apex:outputText value="New Conduit Required" />
+                        </apex:pageBlockSectionItem>
+                         <apex:inputField value="{!siteObject.Sugg_Conduit_Size_Length__c}" />
+                     </apex:pageBlockSection>
+                     <apex:pageBlockSection columns="1" collapsible="false">
+                     	<apex:outputText value="Cable Pull Description" />
+                         <apex:inputTextArea style="width:80%"  value="{!siteObject.Cable_Pull_Description__c}" label="" />
+                         <apex:outputText value="Digital Off Air Comments" />
+                         <apex:inputTextArea style="width:80%"  value="{!siteObject.Digital_Off_Air_Comments__c}" label="" />
+                     </apex:pageBlockSection>
+                </apex:pageBlockSection>
+            </div>
+            <!-- ****************************************************************************************************************
+            **********************************************  Comments    ************************************************ 
+            *******************************************************************************************************************-->
+            <div  style="page-break-before:always" >
+                <apex:pageBlockSection columns="1" title="Comments" id="Comments" >
+                    <apex:outputText value="Comment Box 1" />
+                    <apex:inputField style="width:85%" value="{!siteObject.Comment_Box_1__c}" label="" />
+                    <apex:outputText value="Comment Box 2" />
+                    <apex:inputField style="width:85%" value="{!siteObject.Comment_Box_2__c}" label="" />
+                    <apex:outputText value="Comment Box 3" />
+                    <apex:inputField style="width:85%" value="{!siteObject.Comment_Box_3__c}" label="" />
+                </apex:pageBlockSection>
+            </div>
+        </apex:pageBlock>        
+     </apex:form>
+</apex:page>

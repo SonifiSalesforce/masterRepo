@@ -1,0 +1,69 @@
+<apex:page controller="ThirdPartyCaseQueueManagement"  >
+    <apex:form id="theform" >
+        <apex:pageMessages />
+        <apex:pageBlock >
+            <h2>
+                Choose a Queue name and click Get Queue Members <br/><br/>
+            </h2>
+            <apex:pageBlockSection >
+                <apex:pageBlockSectionItem >
+                    <apex:outputPanel >
+                        <apex:outputLabel value="Third Party Case Queues" /> &nbsp;&nbsp;
+                        <apex:selectList value="{!qname}" size="1"> 
+                            <apex:selectOptions value="{!qlist}" />
+                        </apex:selectList>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:commandButton value="Get Queue Members" action="{!GetQueueMembers}"/>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+        <apex:pageBlock >
+                <apex:pageblockTable value="{!lstcheckedqueuemembers}" var="qn" >
+                <apex:column >
+                    <apex:inputCheckbox value="{!qn.selected}" />
+                </apex:column>
+                <apex:column value="{!qn.u.lastname}" />
+                <apex:column value="{!qn.u.firstname}" />
+                <apex:column value="{!qn.u.email}" />
+                <apex:column value="{!qn.u.mobilephone}"/>
+            </apex:pageblockTable><br/> <br/>
+           <apex:pageBlockSection >
+           <div>
+               <h1>
+                  To remove queue members, select one or more from the list and click Remove Members. 
+               </h1>
+               <apex:commandButton value="Remove Queue Members" action="{!RemoveMembers}"  />
+          </div>
+          </apex:pageBlockSection>
+         </apex:pageBlock>
+        <apex:pageBlock title="To find people to add to the queue, search for user by first and/or last name, then click Find">
+            <apex:pageBlockSection columns="1">
+                <apex:InputText value="{!searchfirst}" label="First Name" />
+                <apex:InputText value="{!searchlast}" label="Last Name" />
+            </apex:pageBlockSection>
+            <div align="center" draggable="false">
+                <apex:commandButton action="{!SearchTechs}" value="Find" />
+                <apex:commandButton action="{!ClearSearchNames}" value="Clear Search" />
+            </div>
+        </apex:pageBlock>
+        <apex:pageBlock >
+            <apex:pageblockTable value="{!lstcheckedtechs}" var="t">
+                <apex:column >
+                    <apex:inputCheckbox value="{!t.selected}" />
+                </apex:column>
+                <apex:column value="{!t.u.lastname}" />
+                <apex:column value="{!t.u.firstname}" />
+                <apex:column value="{!t.u.email}" />
+                <apex:column value="{!t.u.mobilephone}"/>
+            </apex:pageblockTable><br/> <br/>
+            <apex:pageBlockSection >
+                <div>
+                    <h1>
+                       To add people to a queue, make sure there is a value in the drop down list, select one or more names, then click Add Queue Members.
+                    </h1>
+                    <apex:commandButton action="{!AddQueueMembers}" value="Add Queue Members" />
+                </div>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+   </apex:form>
+</apex:page>

@@ -1,0 +1,17 @@
+<apex:page standardcontroller="Case" extensions="CaseController" >
+    <apex:pageMessages showDetail="true" escape="false" />
+    <apex:form >
+    <apex:pageBlock >
+        <apex:pageBlockButtons >
+            <apex:commandButton style="float:centre" value="New Third Party FWO" action="{!CreateThirdPartyFWO}" rerender="redirectPanel"/>
+            <apex:outputPanel id="redirectPanel" >
+                <apex:outputText rendered="{!shouldRedirect}">
+                    <script type="text/javascript">
+                        window.top.location.href = '{!redirectUrl}';
+                    </script>
+                </apex:outputText>
+            </apex:outputPanel>
+        </apex:pageBlockButtons>
+    </apex:pageBlock>
+    </apex:form>
+</apex:page>

@@ -1,0 +1,5 @@
+<apex:page standardController="Work_Order__c" extensions="skuid.Redirects" 
+       showHeader="true" sidebar="false" readonly="true" docType="html-5.0"
+        action="{!IF(canUseSkuid,'',redirect)}" title="{'Related Orders'}">
+    <skuid:page page="RelatedOrders" />
+</apex:page>

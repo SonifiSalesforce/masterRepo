@@ -1,0 +1,392 @@
+﻿<apex:page id="SF" showHeader="false" standardStylesheets="false" doctype="html-5.0" >
+
+<head>
+<meta charset="utf-8" />
+<title></title>
+
+<script>
+    // Global variable used in sf_softphone.js
+    var  Archive_path = '{!JSENCODE($Resource.CCSPTPArchive)}';
+
+/*** begin: translator for Japanese ***/
+
+var translator = (function() {
+
+// mapping agent state to translated.
+// note: agent states are, unlike the others, stored here in small letters.
+var agentStatesMap = {
+	connecting: "接続中...",
+	connected: "接続済み",
+	reconnecting: "再接続中...",
+	disconnected: "未接続",
+	online: "オンライン",
+	offline: "オフライン",
+	available: "受付待ち",
+	availableincall: "受付待ち",
+	incall: "通話中",
+	loggedout: "ログアウト",
+	multiple: "複数コール通話中",
+	onhold: "保留",
+	pending: "ペンディング...",
+	preview: "プレビュー",
+	released: "離席",
+	releasedincall: "離席",
+	releasepending: "離席待ち",
+	ringing: "呼び出し中",
+	unavailable: "離席",
+	wrapup: "ラップアップ"
+};
+
+// mapping call state to translated.
+var callStatesMap = {
+	INITIALIZED: "呼び出し中",
+	Ringing: "呼び出し中",
+	PickUpPending: "ピックアップ処理中",
+	InGreeting: "あいさつ再生中",
+	Initializing: "読込中",
+	PickUpFromHoldPending: "保留解除処理中",
+	Preview: "プレビュー",
+	InCall: "通話中",
+	OnHold: "保留中",
+	OnHoldByDPSAgent: "保留中",
+	WrapUp: "ラップアップ",
+	Destructed: "終了",
+	Closed: "アイドル",
+	CallOutPending: "発信中...", // not sure CallOutPending or OutPending will come, or none comes at all?
+	OutPending: "発信中...",
+	BargeIn: "バージ イン",
+	Silent: "サイレント",
+	Whisper: "ウィスパー",
+	Passive: "パッシブ",
+	SlaveA2AInCall: "保留中",
+	TransferComplete: "通話中", // "転送完了",
+	Conference: "通話中" // "カンファレンス"
+};
+
+// mapping call direction to translated.
+var callDirectionsMap = {
+	Incoming: "着信コール",
+	IncomingA2A: "内線着信",
+	Outgoing: "発信",
+	OutgoingA2A: "内線発信",
+	Predictive: "PD コール",　// "プレディクティブ"
+	Preview: "PV コール",　// "プレビュー"
+	TransferredCall: "転送"
+};
+
+// mapping mediaType (CallInfo.Type) to translated.
+var mediaTypesMap = {
+	Callback: "コールバック",
+	Chat: "チャット",
+	Email: "メール",
+	Voice: "電話",
+	Voicemail: "ボイスメール",
+	VOIP: "電話"
+};
+
+var callHistoryTextMap = {
+	Completed: "完了"
+}
+
+var callFromToTextMap = {
+	tts: "システム転送",
+	"Transfer To System": "システム転送"
+}
+
+function getTranslation(map, text, lcase) {
+	var token = lcase? text.toLowerCase() : text;
+	if (map.hasOwnProperty(token)) {
+		return map[token];
+	}
+	return text;
+}
+
+
+function getSearchError(error, sfPopHelper) {
+	var text;
+	if (typeof(error) === "string") {
+		if (error.indexOf("SfScreenPopError:") === 0) {
+			// error is returned from sforce.screenPop API call.
+			text = "スクリーンポップ エラー: " + error.subsring("SfScreenPopError:".length);
+		} else {
+			switch (error) {
+			case sfPopHelper.GET_SCREENPOP_REQUIRED_EMPTY:
+				text = "検索で使用するパラメータが見つからないか空です。";
+				break;
+
+			case sfPopHelper.GET_SCREENPOP_FAILED:
+				text = "レコード検索に失敗しました。" + log.lastError();
+				break;
+
+			case sfPopHelper.GET_SCREENPOP_NO_SEARCH_RESULT:
+				text = "マッチするレコードはありませんでした。";
+				break;
+
+			case sfPopHelper.GET_SCREENPOP_NOMORE_SEARCH_OPTIONS:
+				text = "マッチするレコードはありませんでした。";
+				break;
+
+			default:
+				text = error;
+				break;
+			}
+		}
+	} else {
+		text = "レコード検索エラー: " + (error.message || error.toString());
+	}
+	return text;
+}
+
+
+return {
+	language: "jp",
+	agentState: function(state) {
+		return getTranslation(agentStatesMap, state, true);
+	},
+	callState: function(state) {
+		return getTranslation(callStatesMap, state);
+	},
+	mediaType: function(name) {
+		return getTranslation(mediaTypesMap, name);
+	},
+	callDirection: function(name) {
+		return getTranslation(callDirectionsMap, name);
+	},
+	searchError: function(error, sfPopHelper) {
+		return getSearchError(error, sfPopHelper);
+	},
+	callHistoryText: function(text) {
+		return getTranslation(callHistoryTextMap, text);
+	},
+	callFromToText: function(text) {
+		return getTranslation(callFromToTextMap, text);
+	}
+}
+})();
+
+
+/*** end: translator for Japanese ***/
+ 
+</script>
+    
+<apex:stylesheet id="st1" value="{!URLFOR($Resource.CCSPTPArchive, 'css/jquery.mobile-1.4.5.min.css')}"/>
+<apex:stylesheet id="st2" value="{!URLFOR($Resource.CCSPTPArchive, 'css/style.css')}"/>
+
+<script src="/support/api/36.0/interaction.js" type="text/javascript"></script>
+
+<apex:includeScript id="js1" value="{!URLFOR($Resource.CCSPTPArchive, 'scripts/jquery-1.11.3.min.js')}"/>
+<apex:includeScript id="js2" value="{!URLFOR($Resource.CCSPTPArchive, 'scripts/jquery.mobile-1.4.5.min.js')}"/>
+<apex:includeScript id="js3" value="{!URLFOR($Resource.CCSPTPArchive, 'scripts/jquery.xml2json.js')}"/>
+<apex:includeScript id="js4" value="{!URLFOR($Resource.CCSPTPArchive, 'scripts/jquery.signalR-2.2.0.min.js')}"/>
+<apex:includeScript id="js5" value="{!URLFOR($Resource.CCSPTPArchive, 'scripts/json2.js')}"/>
+<apex:includeScript id="js6" value="{!URLFOR($Resource.CCSPTPArchive, 'scripts/log4javascript.js')}"/>
+
+<apex:includeScript id="js7" value="{!URLFOR($Resource.CCSPTPArchive, 'scripts/ccsp.ps.logutil.js')}"/>
+<apex:includeScript id="js8" value="{!URLFOR($Resource.CCSPTPArchive, 'scripts/ccsp.ps.sfcti.js')}"/>
+<apex:includeScript id="js9" value="{!URLFOR($Resource.CCSPTPArchive, 'scripts/ccsp.ps.sfhub.js')}"/>
+<apex:includeScript id="js10" value="{!URLFOR($Resource.CCSPTPArchive, 'scripts/ccsp.ps.ccsputil.js')}"/>
+<apex:includeScript id="js11" value="{!URLFOR($Resource.CCSPTPArchive, 'scripts/callHistoryFeed.js')}"/>
+<apex:includeScript id="js12" value="{!URLFOR($Resource.CCSPTPArchive, 'scripts/sf_softphone.js')}"/>
+</head>
+<body>
+
+<div>
+ <div id="company-logo-div" class="logo">
+
+    <apex:image id="imgLogo" value="{!$Resource.SF_logo}"/>
+
+ </div>
+ <div id="error-indicator-div" class="logo"> 
+  <a id="error-indicator" href="#error-indicator-popup-tooltip" data-rel="popup" data-transition="pop" title="エラー">
+
+<apex:image id="imgError" url="{!URLFOR($Resource.CCSPTPArchive,
+                  'images/error.png')}" alt="error indicator"/>
+</a>
+ </div>
+</div>
+
+<div class="vspacer"></div>
+<div class="legendBox">
+ <fieldset>
+  <legend>エージェント</legend> 
+  <table border="0">
+   <tr>
+    <td class="colortxt">
+     <span id="agent-stateText" class="agent-status-text"></span>
+     &nbsp;&nbsp;<apex:image id="agent-stateImage" url="{!URLFOR($Resource.CCSPTPArchive, 'images/Available.png')}" alt="" />
+    </td>
+   </tr>
+   <tr>
+    <td class="colortxt">
+     名前:&nbsp;<span id="agent-extension" class="txt-bold"></span>
+    </td>
+   </tr>
+  </table>
+ </fieldset>
+</div>
+
+<div class="legendBox">
+ <fieldset>
+  <legend>コール</legend> 
+  <table border="0">
+   <tr>
+    <td class="colortxt">メディア:</td>
+    <td><span id="callInfo-mediaType" class="txt-bold"></span></td>
+   </tr>
+   <tr>
+    <td class="colortxt">タイプ:</td>
+    <td><span id="callInfo-direction" class="txt-bold"></span></td>
+   </tr>
+   <tr>
+    <td class="colortxt">状態:</td>
+    <td><span id="callInfo-stateText" class="txt-bold"></span></td>
+   </tr>
+   <tr>
+    <td class="colortxt">発信元:</td>
+    <td><span id="callInfo-from" class="txt-bold"></span></td>
+   </tr>
+   <tr>
+    <td class="colortxt">着信先:</td>
+    <td><span id="callInfo-to" class="txt-bold"></span></td>
+   </tr>
+   <tr>
+    <td></td>
+   </tr>
+   <tr>
+   </tr>
+  </table>
+ </fieldset>
+
+<div class="vspacer"></div>
+<div class="vspacer"></div>
+
+ <table class="opt-table">
+  <tr>
+   <td class="action-cell">
+    <a id="link-pagesync" href="" class="styled-button">ページ同期</a>
+   </td>
+   <td class="action-cell">
+    <!-- popup for call data -->
+    <a id="link-popup-callDetail" href="#popup-callDetail" data-rel="popup" data-position-to="window"  class="styled-button">コール詳細</a>
+   </td>
+  </tr>
+ </table>
+
+ <div data-role="popup" id="popup-callDetail" data-overlay-theme="b" data-theme="a" data-tolerance="5,5,5,5" class="ui-content" >
+  <fieldset>
+   <legend>コール 詳細</legend> 
+   <table border="0" class="fontsize9">
+    <tr>
+     <td class="calldetail-item-label">コール</td>
+     <td><span id="callDetail-callId" class="calldetail-item-value"></span></td>
+    </tr>
+    <tr>
+     <td class="calldetail-item-label">発信元:</td>
+     <td><span id="callDetail-from" class="calldetail-item-value"></span></td>
+    </tr>
+    <tr>
+     <td class="calldetail-item-label">着信先:</td>
+     <td><span id="callDetail-to" class="calldetail-item-value"></span></td>
+    </tr>
+    <tr>
+     <td class="calldetail-item-label">キュー:</td>
+     <td><span id="callDetail-queueName" class="calldetail-item-value"></span></td>
+    </tr>
+    <tr>
+     <td class="calldetail-item-label">発信者:</td>
+     <td><span id="callDetail-callerName" class="calldetail-item-value"></span></td>
+    </tr>
+   </table>
+  </fieldset>
+  <div class="vspacer"></div>
+     <apex:image id="callDetail-closebtn" title="閉じる" styleClass="pointer" url="{!URLFOR($Resource.CCSPTPArchive,
+                  'images/Close.png')}" alt="Close"/>
+     
+ &nbsp;&nbsp;
+ </div>
+
+ <div class="vspacer"></div>
+ <div class="trace-option">
+  <table border="0">
+   <tr>
+    <td style="text-align: right;">トレース:</td>
+    <td>
+     <div class="trace-radio">
+      <fieldset data-role="controlgroup" data-type="horizontal" data-mini="true">
+          <input type="radio" name="trace-option" id="radio-trace-off" value="off" checked="checked" />
+       <label for="radio-trace-off">off</label>
+          <input type="radio" name="trace-option" id="radio-trace-on" value="on" />
+       <label for="radio-trace-on">on</label>
+      </fieldset>
+     </div>
+    </td>
+   </tr>
+  </table>
+ </div>
+
+<!-- popup for dial action-->
+<!-- <a id="link-popup-dial" href="#popup-dial" data-rel="popup" data-position-to="window" class="styled-button">Dial Actions</a> -->
+ <div data-role="popup" id="popup-dial" data-overlay-theme="b" data-theme="a" data-torelance="5,5,5,5" class="ui-content">
+  <div class="legendBox">
+   <fieldset>
+    <legend>発信</legend>
+    <table border="0">
+     <tr>
+      <td class="dialaction-item-label"></td>
+      <td><span id="dialAction-number" class="dialaction-item-value"></span></td>
+     </tr>
+     <tr>
+      <td colspan="2">
+
+     <apex:image id="cancelbtn" title="キャンセル" styleClass="pointer" url="{!URLFOR($Resource.CCSPTPArchive,
+                  'images/Close.png')}" alt="Cancel"/>&nbsp;&nbsp;
+     <apex:image id="dialbtn" title="発信" styleClass="pointer" url="{!URLFOR($Resource.CCSPTPArchive,
+                  'images/Dial.png')}" alt="Dial"/>&nbsp;&nbsp;
+     <apex:image id="xferbtn" title="転送" styleClass="pointer" url="{!URLFOR($Resource.CCSPTPArchive,
+                  'images/Transfer.png')}" alt="Transfer"/>  &nbsp;&nbsp;
+      
+      </td>
+     </tr>
+    </table>
+   </fieldset>
+  </div>
+ </div>
+
+ <!-- tooltip popup for error indicator -->
+ <div id="error-indicator-popup-tooltip" data-role="popup" data-mini="true" class="ui-content" data-theme="a" style="max-width:200px;">
+  <p>
+   <div id="error-indicator-popup-text">ソフトフォン内の javascript にエラーがあります。トレースを on に設定して確認してください。</div>
+  </p>
+  <div id="error-indicator-buttons-div">
+   <a href="#" class="ui-btn ui-corner-all ui-btn-inline ui-mini ui-btn-b" data-rel="back">OK</a>
+   <a id="error-indicator-show-recent-btn" href="#" class="ui-btn ui-corner-all ui-btn-inline ui-mini ui-btn-b" data-rel="back">詳細</a>
+  </div>
+ </div>
+
+ <!-- search result modal which is displayed when screen pop url not found. -->
+ <div id="popup-search-result" data-role="popup" data-overlay-theme="b" data-theme="a"  data-tolerance="5,5,5,5"  class="ui-content" style="max-width:200px;">
+  <p>
+   <div id="search-result-text"></div>
+  </p>
+  <div id="search-result-buttons-div">
+   <a href="#" class="ui-btn ui-corner-all ui-btn-inline ui-mini ui-btn-b" data-rel="back">OK</a>
+  </div>
+ </div>
+</div>
+
+<script type="text/javascript">
+
+// when wanted to supress the following warning, uncomment the lines below.
+// SEC7118: XMLHttpRequest for http:// required Cross Origin Resource Sharing (CORS).
+/***
+(function () {
+    var shortenedDomain = document.domain.replace(/[\w|-]*\./, '');
+    document.domain = shortenedDomain;
+    log.debug("domain has been shortened to " + document.domain);
+})();
+***/
+
+</script>
+</body>
+
+</apex:page>

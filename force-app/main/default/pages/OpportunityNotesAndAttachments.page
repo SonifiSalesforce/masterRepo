@@ -1,0 +1,15 @@
+<apex:page title="Notes & Attachments - Opportunity" 
+           name="OpportunityNotesAndAttachmentsPage"
+           extensions="OpportunityNotesAndAttachmentsExtension"
+           standardController="Opportunity"
+           tabStyle="Opportunity">
+    
+    <apex:form >
+        <apex:pageMessages showDetail="true" escape="false" />
+        <div style="margin: 15px 0px;">
+            <c:NotesAndAttachmentsList interface="{!cloneableInterface}"
+                showAll="{!showAllRecords}" />
+        </div>
+    </apex:form>
+    
+</apex:page>

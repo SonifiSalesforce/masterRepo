@@ -1,0 +1,237 @@
+<apex:page standardController="Site_Survey__c" extensions="DesktopSurveyExtension" title="Desktop Survey">
+    <apex:form id="theForm">
+        <apex:pageBlock id="pageBody">
+        	<apex:pageMessages />
+            <apex:pageBlockButtons >
+                <apex:commandButton value="Save" action="{!saveInfo}" />&nbsp;&nbsp;
+                <apex:commandButton value="Cancel" action="{!cancel}" />
+            </apex:pageBlockButtons>
+             <!-- ********************************************************************
+            ******************************** Hotel Info**********************
+            ************************************************************************** -->
+            <apex:pageBlockSection title="Hotel Info" >
+                <apex:outputField value="{!siteObject.Site__c}" label="Site Name"  /> 
+                <apex:outputField value="{!siteObject.Address__c}" />
+                <apex:inputField value="{!siteObject.Number_of_Rooms__c}" label="Quantity of Rooms"/>
+                <apex:inputField value="{!siteObject.Number_of_TVs__c}" />
+                <apex:inputField value="{!siteObject.Number_of_TV_Outlets__c}" />
+                <apex:inputField value="{!siteObject.iTV_Vendor_Name__c}" />
+                <apex:inputField value="{!siteObject.FTG_Vendor_Contact__c}" label="Free to Guest(FTG) Provider " />
+                <apex:inputField value="{!siteObject.Software_Vendor_Name__c}" label="PMS System" />    
+            </apex:pageBlockSection>
+            <!-- ********************************************************************
+            ******************************** GP/FTG Equipment Location**********************
+            ************************************************************************** -->
+            <div  style="page-break-before:always" >
+            <apex:pageBlockSection title="iTV/FTG Equipment Location" columns="1">
+                <apex:pageBlockSection columns="2">
+	                <apex:inputField value="{!rackLoc.Existing_Rack_Room_Location__c}" label="iTV Equipment Location" style="border-left-color:#ff0000;border-left-width:5px;" /> 
+	                <apex:inputField value="{!rackLoc.FTG_Equipment_Location__c}" label="FTG Equipment Location" />
+	                <apex:pageBlockSectionItem >
+	                	<apex:outputText value="Space for Additional Equipment"/>
+	                	<apex:selectRadio value="{!rackLoc.Space_for_Additional_Equipment__c}">
+	                         <apex:selectOptions value="{!yesNoList}" />
+	                     </apex:selectRadio>
+	                </apex:pageBlockSectionItem>
+	                <apex:inputField value="{!rackLoc.Space_for_Additional_Equipment_Comments__c}" label="Comments" />
+	            </apex:pageBlockSection>  
+                <apex:outputPanel >If SONIFI is not the current provider, what equipment will be removed when the other vendor leaves? </apex:outputPanel>
+                <apex:pageBlockSection columns="2">
+	                <apex:inputField style="width:80%" value="{!rackLoc.Space_for_Additional_Equipment_Comments__c}" label="Comments" />
+	                <apex:outputText style="display:none" />
+	                <apex:pageBlockSectionItem >
+	                	<apex:outputText value="Air Conditioning Adequate?"/>
+	                	<apex:selectRadio value="{!rackLoc.Headend_Adequately_Controlled__c}">
+	                         <apex:selectOptions value="{!yesNoList}" />
+	                     </apex:selectRadio>
+	                </apex:pageBlockSectionItem>
+	                <apex:inputField style="width:80%" value="{!rackLoc.Air_Conditioning_Adequate_Comments__c}" label="Comments" />
+	                <apex:pageBlockSectionItem >
+	                	<apex:outputText value="Power Adequate"/>
+	                	<apex:selectRadio value="{!rackLoc.Adequate_Electrical_Power_In_Headend__c}">
+	                         <apex:selectOptions value="{!yesNoList}" />
+	                     </apex:selectRadio>
+	                </apex:pageBlockSectionItem>
+	                <apex:inputField style="width:80%" value="{!rackLoc.Power_Adequate_Comments__c}" label="Comments " />
+	            </apex:pageBlockSection>
+                <apex:inputField style="width:80%" value="{!rackLoc.Comments__c}" label="Route / Distances for Front Desk/PMS/Net PC cable runs" />
+                <apex:outputPanel >*Attach copy of existing channel lineup</apex:outputPanel>
+                <apex:outputText style="display:none" />
+                <apex:outputPanel >*Please provide pictures of both iTV and FTG racks with the doors open</apex:outputPanel> 
+            </apex:pageBlockSection>
+            </div>
+            <!-- ********************************************************************
+            ******************************** Antenna/Dish Location**********************
+            ************************************************************************** -->
+            <div  style="page-break-before:always" >
+            <apex:pageBlockSection title="Antenna/Dish Location" columns="1">
+            	<apex:inputField value="{!siteObject.Describe_Proposed_Dish_Location__c}" label="Satellite Dish/ Antenna Location" />
+            	<apex:inputField value="{!siteObject.Describe_Existing_Satellite_Dish_Loc__c}" label="Existing Dish Type(s)" />
+            	<apex:inputField value="{!siteObject.Existing_Dish_Type_s__c}" label="Mount Types" />
+            	<apex:pageBlockSectionItem >
+                	<apex:outputText value="Off Air Available"/>
+                	<apex:selectRadio value="{!siteObject.Off_Air_Stations_Available__c}">
+                         <apex:selectOptions value="{!yesNoList}" />
+                     </apex:selectRadio>
+                </apex:pageBlockSectionItem>
+            	<apex:pageBlockSectionItem >
+                	<apex:outputText value="Space available for additional dishes?"/>
+                	<apex:selectRadio value="{!siteObject.Space_Available_for_additional_dishes__c}">
+                         <apex:selectOptions value="{!yesNoList}" />
+                     </apex:selectRadio>
+                </apex:pageBlockSectionItem>
+            	<apex:inputField style="width:80%" value="{!siteObject.Satellite_Info_Comments__c}" label="Comments" />
+            	<apex:outputPanel >Describe Sat/Ant cable runs(Distance, conduit needed, can new cables be run, etc)</apex:outputPanel>
+            	<apex:inputField style="width:80%" value="{!siteObject.Describe_the_Cable_Runs__c}" label="Comments" />
+            	<apex:pageBlockSectionItem >
+                	<apex:outputText value="Any line of site issues?"/>
+                	<apex:selectRadio value="{!siteObject.Any_Line_of_Site_Issues__c}">
+                         <apex:selectOptions value="{!yesNoList}" />
+                     </apex:selectRadio>
+                </apex:pageBlockSectionItem>
+            	<apex:inputField style="width:80%" value="{!siteObject.List_Any_Obstructions__c}" label="Comment" />
+            	<apex:outputPanel >*Please provide pictures of existing dishes and antennas</apex:outputPanel>
+            </apex:pageBlockSection>
+            </div>
+            <!-- ********************************************************************
+            ******************************** Guestroom TV Types**********************
+            ************************************************************************** -->
+            <div  style="page-break-before:always" >
+            <apex:pageBlockSection columns="1" title="TV Information Center" id="TVINFO" >
+                <apex:repeat value="{!tvListGuest}" var="tv">   
+                    <apex:pageBlockSection columns="2" title="TV Type {!tv.TV_Manufacturer__r.Name}" id="TVSECTION">
+                    	<apex:outputPanel style="padding-left:140px">TV Manufacturer<apex:inputField value="{!tv.TV_Manufacturer__c}" style="border-left-color:#ff0000;border-left-width:5px;" />
+                        	<apex:outputPanel ><div style="clear:both"></div><div style="padding-left:140px">If Other <apex:inputText value="{!tv.Other_Manufacturer__c}" /></div></apex:outputPanel>
+                        </apex:outputPanel>
+                        <apex:outputPanel style="padding-left:140px">TV Model<apex:inputField value="{!tv.TV_Model__c}"  />
+                        	<apex:outputPanel ><div style="clear:both"></div><div style="padding-left:140px">If Other <apex:inputText value="{!tv.Other_Model__c}" /></div></apex:outputPanel>
+                        </apex:outputPanel>
+                        <apex:inputField value="{!tv.Firmware_Version__c}" /> 
+                        <apex:inputField value="{!tv.Quantity__c}" />
+                        <apex:inputField value="{!tv.Existing_Terminal_Type__c}" />
+                        <apex:selectRadio value="{!tv.Pro_Idiom_Compatible__c}">
+                            <apex:selectOptions value="{!yesNoList}" />
+                        </apex:selectRadio>
+                        <apex:pageBlockSectionItem >
+                            <apex:pageBlockSectionItem >
+                                <apex:outputPanel >Type of TV Mount</apex:outputPanel>
+                                <apex:inputField value="{!tv.Type_of_TV_Mount__c}" />
+                            </apex:pageBlockSectionItem>
+                            <apex:pageBlockSectionItem >
+                                <apex:outputText value="If Other " />
+                                <apex:inputText value="{!tv.Other_Type_of_TV_Mount__c}"  />
+                            </apex:pageBlockSectionItem>
+                        </apex:pageBlockSectionItem> 
+                        <apex:inputField value="{!tv.Existing_Security_Sleeve_Type__c}" />
+                        <apex:pageBlockSectionItem >
+	                        <apex:selectRadio value="{!tv.Terminal_Mounted_Cable_Man_Adequate__c}">
+	                            <apex:selectOptions value="{!yesNoList}" />
+	                        </apex:selectRadio>
+	                        <apex:outputPanel >Are terminal properly mounted and cable management adequate</apex:outputPanel>
+                        </apex:pageBlockSectionItem>
+                        <apex:inputField value="{!tv.Terminal_Mount_Cable_Manage_Comments__c}" label="Comments"/>
+                        <apex:inputField style="width:70%" value="{!tv.Comments__c}" />
+                    </apex:pageBlockSection>
+                </apex:repeat>
+                <apex:commandButton value="Add A Row" action="{!addRowTVInfo}" rerender="pageBody" />
+            </apex:pageBlockSection>
+            </div>
+            <!-- ********************************************************************
+            ******************************** Public Viewing Locations **********************
+            ************************************************************************** -->
+            <div  style="page-break-before:always" >
+           <apex:pageBlockSection columns="1" title="Public Viewing Locations" id="TVINFOLOCATION" >
+                 <apex:repeat value="{!id2TVLoc}" var="loc">
+                    <apex:pageBlockSection columns="1" title="TV Location: {!id2TVLoc[loc].Name}" > 
+                         <apex:inputField value="{!id2TVLoc[loc].Name}" style="border-left-color:#ff0000;border-left-width:5px;" />
+                         <apex:inputField value="{!id2TVLoc[loc].FCO__c}" />
+                         <apex:repeat value="{!locationId2NumTVs[loc]}" var="num">    
+                            <apex:pageBlockSection columns="2" title="TV Type {!id2TypeMap[loc][num].TV_Manufacturer__r.Name}" id="TVSECTION">
+                            	<apex:outputPanel style="padding-left:140px">TV Manufacturer<apex:inputField value="{!id2TypeMap[loc][num].TV_Manufacturer__c}" style="border-left-color:#ff0000;border-left-width:5px;" />
+		                        	<apex:outputPanel ><div style="clear:both"></div><div style="padding-left:140px">If Other&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<apex:inputText value="{!id2TypeMap[loc][num].Other_Manufacturer__c}" /></div></apex:outputPanel>
+		                        </apex:outputPanel>
+		                        <apex:outputPanel style="padding-left:140px">TV Model<apex:inputField value="{!id2TypeMap[loc][num].TV_Model__c}"  />
+		                        	<apex:outputPanel ><div style="clear:both"></div><div style="padding-left:140px">If Other&nbsp;&nbsp;&nbsp;&nbsp;<apex:inputText value="{!id2TypeMap[loc][num].Other_Model__c}" /></div></apex:outputPanel>
+		                        </apex:outputPanel>
+                                <apex:inputField value="{!id2TypeMap[loc][num].MPEG_2_4__c}" />
+                                <apex:inputField value="{!id2TypeMap[loc][num].Quantity__c}" />             
+                                <apex:selectRadio value="{!id2TypeMap[loc][num].Pro_Idiom_Compatible__c}">
+		                            <apex:selectOptions value="{!yesNoList}" />
+		                        </apex:selectRadio>
+                                <apex:selectRadio value="{!id2TypeMap[loc][num].HDTV__c}">
+		                            <apex:selectOptions value="{!yesNoList}" />
+		                        </apex:selectRadio>
+		                        <apex:pageBlockSectionItem >
+                                    <apex:pageBlockSectionItem >
+                                        <apex:outputPanel >Type of TV Mount</apex:outputPanel>
+                                        <apex:inputField value="{!id2TypeMap[loc][num].Type_of_TV_Mount__c}" />
+                                    </apex:pageBlockSectionItem>
+                                    <apex:pageBlockSectionItem >
+                                        <apex:outputText value="If Other " />
+                                        <apex:inputText value="{!id2TypeMap[loc][num].Other_Type_of_TV_Mount__c}"  />
+                                    </apex:pageBlockSectionItem>
+                                </apex:pageBlockSectionItem>
+                            </apex:pageBlockSection>
+                            <apex:pageBlockSection columns="1">
+                                <apex:inputTextArea style="width:70%" value="{!id2TypeMap[loc][num].Comments__c}" />
+                            </apex:pageBlockSection>
+                        </apex:repeat>
+                        <apex:commandButton value="Add A TV Type To {!id2TVLoc[loc].Name}" action="{!addRowTVLoc}" rerender="pageBody" >
+                           <apex:param name="locationId" value="{!loc}" assignTo="{!locationId}"  />
+                       </apex:commandButton>
+                    </apex:pageBlockSection>
+                 </apex:repeat>
+                 <apex:commandButton value="Add A Location" action="{!addRowLocation}" rerender="pageBody" />
+            </apex:pageBlockSection>  
+            </div>
+             <!-- ********************************************************************
+            ******************************** MATV System **********************
+            ************************************************************************** -->
+            <div  style="page-break-before:always" >
+            <apex:pageBlockSection title="MATV System" columns="1">
+            <apex:outputPanel >Based on existing paperwork, we have found the following</apex:outputPanel>
+            	<apex:pageBlockSectionItem >
+            		<apex:pageBlockSectionItem >
+            			<apex:outputText value="MATV Topology" />
+            			<apex:inputField value="{!siteObject.MATV_Topology__c}" />
+            		</apex:pageBlockSectionItem>
+            		<apex:pageBlockSectionItem >
+            			<apex:outputText value="If Other" />
+            			<apex:inputField value="{!siteObject.Other_MATV_Topology__c}" />
+            		</apex:pageBlockSectionItem>
+            	</apex:pageBlockSectionItem>
+            	<apex:inputField value="{!siteObject.Year_of_Last_Major_Rework__c}" />
+            	<apex:pageBlockSectionItem >
+            		<apex:pageBlockSectionItem >
+            			<apex:outputText value="Existing Amplifier Bandwidth" />
+            			<apex:inputField value="{!siteObject.Existing_Amplifier_Bandwidth__c}" />
+            		</apex:pageBlockSectionItem>
+            		<apex:pageBlockSectionItem >
+            			<apex:outputText value="If Other" />
+            			<apex:inputField value="{!siteObject.Other_Existing_Amplifier_Bandwidth__c}" />
+            		</apex:pageBlockSectionItem>
+            	</apex:pageBlockSectionItem>
+            	<apex:inputField value="{!siteObject.Estimated_Bandwith_of_Existing_System__c}" />
+            	<apex:inputField value="{!siteObject.Signal_Readings_from_Upgrade__c}" />
+            	<apex:inputField value="{!siteObject.Work_Performed_During_Last_Upgrade__c}" />
+            	<apex:selectRadio value="{!siteObject.Jumpers_need_replaced__c}">
+                    <apex:selectOptions value="{!yesNoList}" />
+                </apex:selectRadio>
+            	<apex:inputField value="{!siteObject.What_Size_Jumpers_need_Replacement__c}" label="If yes, what size?"/>
+            	<apex:outputPanel >
+            		<apex:outputText value="Has there been a remodel since the last upgrade that would affect the MATV?" />
+            		<apex:selectRadio value="{!siteObject.Any_remodel_since_last_upgrade__c}">
+	                    <apex:selectOptions value="{!yesNoList}" />
+	                </apex:selectRadio>
+            	</apex:outputPanel>
+            	<apex:outputPanel >Description of existing problem<div style="clear:both"></div><apex:inputField style="width:80%" value="{!siteObject.Description_of_Existing_Problem__c}" /></apex:outputPanel>
+            	<apex:outputPanel >What is needed to upgrade for HD Content<div style="clear:both"></div><apex:inputField style="width:80%" value="{!siteObject.What_is_needed_to_upgrade_for_HD_content__c}" label=""/></apex:outputPanel>
+            	<apex:outputPanel >Are there any known channels to avoid<div style="clear:both"></div><apex:inputField style="width:80%" value="{!siteObject.Are_there_any_known_channels_to_avoid__c}" /></apex:outputPanel>
+            	<apex:outputPanel >*If available, attach the following</apex:outputPanel>
+            	<apex:outputPanel >Photos, copy of room readings from last upgrade, amplifier settings, as-built drawings</apex:outputPanel>
+            	<apex:inputField style="width:80%" value="{!siteObject.File_Review_Comments__c}" />
+            </apex:pageBlockSection>
+            </div>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>

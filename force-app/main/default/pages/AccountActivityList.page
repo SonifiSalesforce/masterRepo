@@ -1,0 +1,15 @@
+<apex:page title="Activity List - Account" 
+           name="AccountActivityListPage"
+           extensions="AccountActivityListExtension"
+           standardController="Account"
+           tabStyle="Account">
+    
+    <apex:form >
+        <apex:pageMessages showDetail="true" escape="false" />
+        <div style="margin: 15px 0px;">
+            <c:ActivityList interface="{!cloneableInterface}"
+                showAll="{!showAllRecords}" />
+        </div>
+    </apex:form>
+    
+</apex:page>

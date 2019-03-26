@@ -1,0 +1,278 @@
+<apex:page standardController="Opportunity"
+    extensions="OpportunityProgrammingHeirarchyExtension" cache="false"
+    action="{!loadContracts}">
+    <apex:include pageName="GetUIThemeContext" />
+    <!--jjackson 2/21 added this to expose js functions that return user ui context -->
+    <script type="text/javascript" src="/soap/ajax/39.0/connection.js"></script>
+    <script type="text/javascript"
+        src="/support/console/39.0/integration.js"></script>
+    <script type="text/javascript"
+        src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script type="text/javascript"
+        src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <script
+        src="{!URLFOR($Resource.CustomResources, 'fancytree/src/jquery.fancytree.js')}"
+        type="text/javascript"></script>
+    <script
+        src="{!URLFOR($Resource.CustomResources, 'fancytree/src/jquery.fancytree.table.js')}"
+        type="text/javascript"></script>
+    <link
+        href="{!URLFOR($Resource.CustomResources, 'fancytree/src/skin-lion/ui.fancytree.css')}"
+        rel="stylesheet" type="text/css" />
+    <apex:stylesheet value="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.0/themes/smoothness/jquery-ui.css"></apex:stylesheet>
+    <style>
+#treetable {
+    width: 100%;
+}
+
+td.productFamily {
+    text-align: center;
+}
+</style>
+
+
+    <script type="text/javascript">
+
+        document.addEventListener('DOMContentLoaded', function(event)
+      { document.getElementById('isLightningExperienceJS').innerHTML = ForceUI.isLightningExperience(); });
+
+
+        j$ = jQuery.noConflict();
+
+            var selectedKeys = [];
+            var selectedNodes = [];
+            var urlPrefix = '{!$Site.Prefix}';
+            var inLightning = ForceUI.isLightningExperience();
+            var inConsole = sforce.console.isInConsole();
+            var contractId;
+ 
+            j$(function(){
+                j$("#treetable").fancytree({
+                    extensions: ["table"],
+                    checkbox: true,
+                    selectMode: 3, // 1:single, 2:multi, 3:multi-hier
+                    debugLevel: 3,
+                    table: {
+                        indentation: 20      // indent 20px per node level
+                    },
+                    source: {!treeJSON},
+                    select: function(event, data) {
+                        selectedNodes = data.tree.getSelectedNodes();
+                        data.tree.rootNode.visit(function(node){
+                            if(node.partsel && !node.selected) {
+                                selectedNodes.push(node);
+                            }
+                        });
+                    },
+                    rendercolumns:function(e, data){
+
+                        var node = data.node;
+                        j$tdList = j$(node.tr).find(">td");
+                        j$tdList.eq(2).text(node.data.quantity);
+                        j$tdList.eq(3).text(node.data.price);
+                        j$tdList.eq(4).text(node.data.total);
+                    }
+
+
+                });
+
+                j$("#treetable").delegate("span[class='fancytree-title']", "click", function(event){
+                    event.stopPropagation();  // prevent fancytree activate for this row
+                    var node = j$.ui.fancytree.getNode(event);
+                    // Use <a> href and target attributes to load the content:
+                    if( node.data.href ){
+                        navigateTo(node.data.href, node.data.target); //jjackson 2/2018 replaced window.open with navigateTo
+                    }
+                });
+            });
+
+            j$(document).ready(function() {
+                initializeComponent();
+                j$(".contract-option:eq(0)").click();
+            });
+
+            /* Initialze UI Components (MUST be called with any new page load)  */
+            var initializeComponent = function() {
+                j$("#popup").dialog({ autoOpen: false, modal: true, position: 'center', width:'600', height:'350'  });
+                j$(".contract-option").click(function() {
+                j$(".contract-option").removeClass("selected").find("input").prop("checked", false);
+                j$(this).addClass("selected").children("input:eq(0)").prop("checked", true);
+            });
+
+                j$("#save-contract").click(function() {
+                    saveSelectedContract();
+                });
+            };
+
+            var saveSelectedContract = function() {
+                contractId = j$(".contract-option.selected").data("id");  //jjackson declaring this variable at the top
+                var contractKey = j$(".contract-option.selected").data("key");
+                var appendToContract = j$("#appendCheckbox").prop('checked');
+                //alert("contractid variable = " +contractId);
+                if (contractKey == null || contractKey == "") {
+                    alert("No contract selected.\n\nPlease select an contract and retry.");
+                    return;
+                }
+
+                try {
+                    saveAndExit( JSON.stringify(selectedKeys), contractId, appendToContract);
+                } catch (err) {
+                    alert(err);
+                }
+            };
+
+            function showDialog(name){
+                selectedKeys = j$.map(selectedNodes, function(node){if(node.title != null && node.title != ""){return node.key;}});
+                var vAppliedQuote = '{!strAppliedQuote}';
+                var vPrimaryQuote = '{!strPrimaryQuote}';
+
+                if(vAppliedQuote != '' && vPrimaryQuote != '') {
+                   alert("This opportunity has an Applied Quote (SPT) and Primary Quote (CPQ).  Please remove one.");
+                }
+                else if(vPrimaryQuote != '') {
+                   createContract();
+                }
+                else {
+                   if(selectedKeys.length > 0){
+                       j$("#popup").dialog("open");
+                       j$("#popup").dialog("option", "title", name);
+                       j$("#popup").dialog('option', 'position', 'center');
+                       j$("#popup").dialog('option', 'closeOnEscape', true);
+                   } else {
+                       alert("Please select at least one product inventory item (SPT) or select a Primary Quote (CPQ)");
+                   }
+                }
+                return false;
+            }
+
+
+            var afterComplete = function () {
+                hidePopup();
+                return true;
+            }
+
+            var hidePopup = function(){
+                j$("#popup").dialog("close");
+            }
+
+            /* Navigate to a specified Url in either the standard or service cloud console */
+            var navigateTo = function(urlString, target) {
+
+                // Check for service cloud console
+                try {
+                    if (sforce.console.isInConsole()) {
+                        // Get the enclosing primary tab id.
+                        sforce.console.getEnclosingPrimaryTabId(function(result) {
+                            // Use the results primary tab id and open a new subtab
+                            sforce.console.openSubtab(result.id,urlString, true);
+                        });
+                        return false;
+                    }
+                } catch (err) {}
+
+               if(inLightning == false)
+               { if (urlPrefix != null && urlPrefix != '') { urlString = urlPrefix + '/' + urlString; }
+                    window.open(urlString, target);
+               }
+               else
+               { sforce.one.navigateToURL(urlString);  } //jjackson 2/2018 added this for lightning experience navigation
+            };
+
+            function setFocusOnLoad() {}
+
+
+    </script>
+    <apex:form >
+        <apex:actionFunction action="{!updateAsContracted}" name="createContract" reRender="ProgrammingHierarchy" />
+        <div id="ProgrammingHierarchy">
+            <apex:pageBlock mode="maindetail">
+                <apex:pageMessages id="pagemessages" showDetail="true"
+                    escape="false" />
+                <apex:pageBlockButtons location="top">
+                    <apex:commandButton onclick="return showDialog('')"
+                        value="Create Contract Line Items"
+                        rendered="{!showAddContractLineItems}" />
+                </apex:pageBlockButtons>
+                <table id="treetable">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th></th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+
+                </table>
+            </apex:pageBlock>
+        </div>
+        <br />
+        <div id="popup">
+            <apex:pageBlock >
+                <div style="overflow: auto; overflow-y: scroll; height: 250px;">
+                    <apex:pageBlockSection title="Select Contract" columns="1"
+                        collapsible="false">
+                        <div id="contract-block">
+                            <apex:repeat value="{!contractList}" var="e">
+                                <div class="contract-option"
+                                    data-id="{!contractMap[e].contractId}"
+                                    data-key="{!contractMap[e].key}"
+                                    data-name="{!contractMap[e].name}">
+                                    <input type="radio" value="{!contractMap[e].key}" />
+                                    <!--removed closing input tag-->
+                                    <b>{!contractMap[e].name}</b>
+                                </div>
+                            </apex:repeat>
+                        </div>
+                    </apex:pageBlockSection>
+                </div>
+                <div id="appendCheckboxDiv">
+                    <label><input type="checkbox" id="appendCheckbox" /> Append
+                        to Contract </label>
+                </div>
+                <apex:outputPanel id="redirectPanel">
+                    <apex:outputText rendered="{!shouldRedirect}">
+                        <script type="text/javascript">
+                            if(inLightning == false)
+                            { window.top.location.href = '{!redirectUrl}'; }
+                            else
+                            {   sforce.one.navigateToURL('{!redirectUrl}');  }
+                        </script>
+                    </apex:outputText>
+                </apex:outputPanel>
+                <apex:actionStatus id="mySearchStatus1">
+                    <apex:facet name="stop">
+                        <apex:commandButton style="float:right;"
+                            value="Add Contract Line Items" onclick="saveSelectedContract();"
+                            oncomplete="afterComplete();"
+                            rerender="redirectPanel, pageMessages" status="mySearchStatus1" />
+                    </apex:facet>
+                    <apex:facet name="start">
+                        <apex:outputPanel >
+                            <apex:commandButton style="float:right;" value="Processing..."
+                                status="mySearchStatus1" disabled="true" />
+                            <apex:image value="/img/loading32.gif"
+                                style="float:right;height: 15px;" />
+                        </apex:outputPanel>
+                    </apex:facet>
+                </apex:actionStatus>
+                <apex:actionFunction name="saveAndExit" action="{!saveTasks}"
+                    oncomplete="afterComplete();"
+                    rerender="redirectPanel, pagemessages">
+                    <apex:param name="selectedKeys" value="" />
+                    <apex:param name="contractId" value="" />
+                    <apex:param name="appendToContractBoolean" value="" />
+                </apex:actionFunction>
+            </apex:pageBlock>
+        </div>
+    </apex:form>
+</apex:page>

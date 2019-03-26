@@ -1,0 +1,12 @@
+<apex:page id="CaseFlashNotificationList" 
+		   title="Flash Notifications" 
+           name="CaseFlashNotificationPage"
+           standardController="Case"
+           tabStyle="Case">
+	
+    <apex:form >
+        <apex:pageMessages showDetail="true" escape="false" />
+		<c:FlashNotificationList accountId="{!Case.AccountId}"/>
+    </apex:form>
+	
+</apex:page>

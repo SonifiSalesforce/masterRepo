@@ -1,0 +1,3 @@
+<apex:page standardController="WorkOrder" docType="html-5.0" showHeader="false" standardStylesheets="false" cache="true">
+<EZSign:clearSignature />
+</apex:page>

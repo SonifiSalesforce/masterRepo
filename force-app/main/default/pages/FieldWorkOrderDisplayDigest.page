@@ -1,0 +1,29 @@
+<apex:page showHeader="false" StandardController="WorkOrder" extensions="FieldWorkOrderDisplayDigestExtension"  >
+    <apex:form >
+        <apex:pageBlock >
+            <apex:pageBlockButtons >
+                <apex:commandButton action="{!SaveChange}" value="Save Changes" id="savebut" />
+            </apex:pageBlockButtons>
+            &nbsp;
+            &nbsp;
+            &nbsp;
+            <apex:pageBlockTable value="{!lstfsd}" var="d" columns="3" >
+                <apex:column headerValue="Arrival Time">
+                    <apex:actionRegion >
+                        <apex:outputField value="{!d.CheckIn_Time__c}"  >
+                            <apex:inlineEditSupport event="ondblClick" showOnEdit="savebut"/>
+                        </apex:outputField>
+                    </apex:actionRegion>
+                </apex:column>
+                <apex:column headerValue="Work Complete Time">
+                    <apex:actionRegion >
+                        <apex:outputField value="{!d.CheckOut_Time__c}">
+                            <apex:inlineEditSupport event="ondblClick" showOnEdit="savebut"/>
+                        </apex:outputField>
+                    </apex:actionRegion>
+                </apex:column>
+                <apex:column headerValue="Duration in Hours" value="{!d.Time_Spent_on_Site_hrs__c}" />
+            </apex:pageBlockTable>  
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>

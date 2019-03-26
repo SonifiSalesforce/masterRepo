@@ -1,0 +1,10 @@
+<apex:page standardController="Opportunity" showHeader="false" sidebar="false">
+    <script>
+        if ("{!Opportunity.Account.RecordType.Name}" == "Hospitality Site" ){ 
+            window.open("https://na21.springcm.com/atlas/doclauncher/eos/Create Contract?aid=18526&eos[0].Id={!Opportunity.Id}&eos[0].System=Salesforce&eos[0].Type=Opportunity&eos[0].Name={!Opportunity.Name}&eos[0].ScmPath=/Salesforce/{!Opportunity.Account.Hotel_Brand__c}/{!Opportunity.Account.Name}/Opportunities") 
+        } 
+        else if ("{!Opportunity.Account.RecordType.Name}" == "Healthcare Site"){ 
+            window.open("https://na21.springcm.com/atlas/doclauncher/eos/Create Contract Healthcare?aid=18526&eos[0].Id={!Opportunity.Id}&eos[0].System=Salesforce&eos[0].Type=Opportunity&eos[0].Name={!Opportunity.Name}&eos[0].ScmPath=/Salesforce/{!Opportunity.Account.Hotel_Brand__c}/{!Opportunity.Account.Name}/Opportunities") 
+        }            
+    </script>
+</apex:page>

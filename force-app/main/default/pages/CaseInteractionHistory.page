@@ -1,0 +1,83 @@
+<apex:page title="Case Interaction History" 
+           name="CaseInteractionHistoryPage"
+           extensions="CaseInteractionHistoryExtension"
+           standardController="Case"
+           tabStyle="Case">
+    
+    <style>
+        #history-table {
+            width: 100%;
+            border-spacing:0;
+            border-collapse:collapse;           
+        }
+        
+        #history-table thead {
+            background: lightslategray;
+            line-height: 2em;           
+            font-weight: bold;
+        }
+        
+        #history-table thead td {
+            padding: 0px 5px;
+            color: white;
+        }
+        
+        #history-table tr {
+            // border-bottom: 1px solid lightgray;
+        }
+        
+        #history-table td {
+            padding: 5px;
+        }
+        
+        .history-item-header {
+            // background: #e0e0ef;
+            border-top: 1px solid lightgray;
+        }
+        
+        .history-item-detail {
+            padding: 5px 0px 5px 25px !important;
+            line-height:1.5em;
+        }
+        
+        .history-item-detail p {
+            background: white;
+            margin: 5px 25px 5px 0px;
+            // padding: 5px;
+        }
+    </style>
+    
+    <apex:outputPanel id="case-history-block" layout="block">
+        <table id="history-table">
+            
+            <!-- <thead><tr><td>Case Interaction History</td></tr></thead>  -->
+            
+            <apex:outputPanel styleClass="empty-list" rendered="{!ISNULL(historyList)}">
+                No interaction history found for this case.
+            </apex:outputPanel>
+            
+            <apex:outputPanel rendered="{!!ISNULL(historyList)}">
+                <apex:repeat value="{!historyList}" var="item">
+                    
+                    <tr class="history-item-header">
+                        <td><b>{!item.objectName}</b> Created by {!item.createdBy} on {!item.createdDateFormatted}</td>
+                    </tr>
+                    
+                    <apex:outputPanel rendered="{!OR(!ISNULL(item.header), !ISNULL(item.details))}">
+                        
+                        <tr>
+                            <td class="history-item-detail">
+                                <apex:outputText value="{!item.header}" rendered="{!!ISNULL(item.header)}"/>
+                                <apex:outputPanel rendered="{!!ISNULL(item.details)}">
+                                    <p><apex:outputText value="{!item.details}" escape="false" /></p>
+                                </apex:outputPanel>
+                            </td>
+                        </tr>
+                    </apex:outputPanel>
+                    
+                </apex:repeat>
+            </apex:outputPanel>
+        </table>
+    </apex:outputPanel>
+
+</apex:page>

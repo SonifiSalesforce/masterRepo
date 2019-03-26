@@ -1,0 +1,765 @@
+<apex:component layout="block" allowDML="true"
+    controller="OpportunityListController">
+    
+    <apex:attribute name="interface" type="CloneableInterface" required="true"
+                    assignTo="{!cloneableInterfaceObject}"
+                    description="Interface object that contains methods for supporting the list." />
+    
+    <apex:attribute name="showAll" type="Boolean" required="false" default="false"
+                    assignTo="{!showAllRecords}"
+                    description="Indicates whether to show all records or a mini list of records (for embedding in pages)." />
+    
+    <apex:styleSheet value="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/smoothness/jquery-ui.css" />
+    <apex:stylesheet value="{!URLFOR($Resource.CustomResources, 'custom-styles.css')}" />
+    
+<!-- 
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js" />
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js" />
+-->
+ 
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"/>
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"/>
+    
+    <style>
+    	.page-title {
+    		display: block;
+    		font-size: 1.8em;
+    		padding: 5px 0px;
+    	}
+        
+        .dialog-form {
+            font-size: 10px;
+        }
+        
+        .stage-change-row {
+        	display: block;
+        	padding: 5px;
+        	height: 2.4em;
+        	border: 1px solid lightgray;
+        	border-radius: 3px;
+        	margin: 10px 0px;
+        }
+        
+        .stage-change-line-item {
+        	display: inline-block;
+        	font-size: 1.1em;
+        }
+        
+        .stage-change-line-item select {
+        	border: none;
+        	color: white;
+        	background: gray;
+        	font-size: 1.2em;
+        	height: 1.8em;
+        }
+        
+        .close-reason-line-item {
+        	display: inline-block;
+        	font-size: 1.1em;
+        }
+        
+        .close-reason-line-item select {
+        	border: none;
+        	color: white;
+        	background: gray;
+        	font-size: 1.2em;
+        	height: 1.8em;
+        }
+        
+        .empty-list {
+        	font-size: 1.1em;
+            color: black;
+            background: #f8f8f8;
+            border: 1px solid lightgray;
+            padding: 5px;
+        }
+        
+        .list-header {
+        	display: inline;
+        }
+        
+        .list-header-title {
+        	float: left;
+        	font-size: 1.4em;
+        	font-weight: bold;
+        	display: inline-block;
+        	margin: 10px;
+        	
+        }
+        
+        .list-header-buttons {
+        	float: right;
+        	margin: 10px 15px;
+        }
+        
+        .list-header-buttons input {
+        	float: right;
+        	margin: 0px 3px;
+        }
+        
+    </style>
+    
+    <script>
+        var stageNamePicklistValues,
+        	$closeOpportunityDialog,
+        	$stageChangeDialog,
+            $j = jQuery.noConflict();
+            
+        jQuery(document).ready(function() {
+			
+            /* 	STAGE-CHANGE DIALOG */
+            $stageChangeDialog = $j("#stage-change-dialog");
+            $stageChangeDialog.dialog({
+                autoOpen: false,
+                resizable: false,
+                modal: true,
+                buttons: {
+                    "Save": function() {
+                        
+                        // Get opportunities
+                        var opportunityIdList = [];
+                        $j(".list-item-checkable:checked").each(function() {
+                            var itemId = $j(this).data("id");
+                            if (itemId != undefined && itemId != null && itemId != "") {
+                                opportunityIdList.push($j(this).data("id"));
+                            }
+                        });
+                        
+                        // Get stage
+                        var newStage = $j(this).find(".stage-change-line-item > select:eq(0)").val();
+                        if (newStage == null || newStage == "") {
+                        	window.alert("Please select a stage or use the 'Cancel' button to exit without saving.");
+                        	return false;
+                        }
+                        
+                        $j(this).dialog("close");
+                        
+                        // Update Stage
+                        doChangeOpportunityStage(opportunityIdList.join(","), newStage);
+                    },
+                    Cancel: function() {
+                        $j(this).dialog("close");
+                    }
+                }
+            });
+            
+            /* 	LINE-ITEM UPDATE DIALOG */
+            $closeOpportunityDialog = $j("#close-opportunity-dialog");
+            $closeOpportunityDialog.dialog({
+                autoOpen: false,
+                height: 473,
+                width: 600,
+                resizable: false,
+                modal: true,
+                buttons: {
+                    "Save": function() {
+                        
+                        // Get opportunitites
+                        var opportunityIdList = [];
+                        $j(".list-item-checkable:checked").each(function() {
+                            var itemId = $j(this).data("id");
+                            if (itemId != undefined && itemId != null && itemId != "") {
+                                opportunityIdList.push($j(this).data("id"));
+                            }
+                        });
+                        
+                        // Read Closed WON and LOST reason fields
+                        var closeWonReason = $j(this).find("#close-won-reason").val();
+                       	var closeWonDesc = $j(this).find("#close-won-description").val();
+                        var closeLostReason = $j(this).find("#close-lost-reason").val();
+                       	var closeLostDesc = $j(this).find("#close-lost-description").val();
+                        
+                        // Get opportunity line items
+                        var hasClosedWon = false;
+                        var hasClosedLost = false;
+                        var closedProductJson = [];
+                        $j(".stage-change-line-item > select").each(function() {
+                        	var thisStage = $j(this).val();
+                        	if (thisStage != null && thisStage != "") {
+                        		var closeReason = "", closeDesc = "";
+                        		if (thisStage.toLowerCase().indexOf("won") > -1) {
+                        			hasClosedWon = true;
+                        			closeReason = closeWonReason;
+                        			closeDesc = closeWonDesc;
+                        		} else if (thisStage.toLowerCase().indexOf("lost") > -1) {
+                        			hasClosedLost = true;
+                        			closeReason = closeLostReason;
+                        			closeDesc = closeLostDesc;
+                        		}
+                        		var $parent = $j(this).parent();
+                        		var thisProductId = $parent.data("product-id");
+                        		var thisProductName = $parent.data("product-name");
+                        		// console.debug('closeReason: ' + closeReason);
+                        		// console.debug('closeDes: ' + closeDesc);
+                        		closedProductJson.push({
+                        			productId: thisProductId,
+                        			productName: thisProductName,
+                        			stage: thisStage,
+                        			reason: closeReason,
+                        			description: closeDesc
+                        		});
+                        	}
+                        });
+                        
+                        // Check for required values
+                        if (hasClosedWon) {
+	                        if (closeWonReason == null || closeWonReason == "" 
+	                        		|| closeWonReason == $j("#close-won-reason").children(0).val()) {
+	                        	window.alert("Please select a Closed WON reason.");
+	                        	return false;
+	                        }
+	                        
+	                        if (closeWonReason.toLowerCase() == "other") {
+		                        if (closeWonDesc == null || closeWonDesc == "") {
+		                        	window.alert("You MUST enter a description when the close reason is 'Other'.");
+		                        	return false;
+		                        }
+	                        }
+                        }
+                        
+                        if (hasClosedLost) {
+	                        if (closeLostReason == null || closeLostReason == "" 
+	                        		|| closeLostReason == $j("#close-lost-reason").children(0).val()) {
+	                        	window.alert("Please select a Closed LOST reason.");
+	                        	return false;
+	                        }
+	                        
+	                        if (closeLostReason.toLowerCase() == "other") {
+		                        if (closeLostDesc == null || closeLostDesc == "") {
+		                        	window.alert("You MUST enter a description when the close reason is 'Other'.");
+		                        	return false;
+		                        }
+	                        }
+                        }
+
+                        $j(this).dialog("close");
+                        
+                        // Update Line Items
+                        var closedProductJsonString = JSON.stringify(closedProductJson);
+                        // console.debug(closedProductJsonString);
+                        doCloseOpportunityByProduct(opportunityIdList.join(","), closedProductJsonString);
+                    },
+                    "Won All": function() {
+						/* Prompt user for confirmation */
+						$confirmDialog.data("id", "");
+						$confirmDialog.data("type", "close");
+						$confirmDialog.data("close-type", "won");
+						$confirmDialog.html(
+						        '<p class="dialog-text">Are you sure you want close '
+						        + '<b><u>all</u></b> selected items as <i>WON</i></p>'); 
+						$confirmDialog.dialog("open");
+						$confirmDialog.dialog("option", "title", "Confirm Close All");
+                    },
+                    "Lost All": function() {
+						/* Prompt user for confirmation */
+						$confirmDialog.data("id", "");
+						$confirmDialog.data("type", "close");
+						$confirmDialog.data("close-type", "lost");
+						$confirmDialog.html(
+						        '<p class="dialog-text">Are you sure you want close '
+						        + '<b><u>all</u></b> selected items as <i>LOST</i></p>'); 
+						$confirmDialog.dialog("open");
+						$confirmDialog.dialog("option", "title", "Confirm Close All");
+                    },
+                    Cancel: function() {
+                        $j(this).dialog("close");
+                    }
+                }
+            });
+            
+            /* CONFIRM DIALOG */
+            $confirmDialog = $j("#confirm-dialog");
+            $confirmDialog.dialog({
+                autoOpen: false,
+                resizable: false,
+                height: 250,
+                width: 325,
+                modal: true,
+                buttons: {
+                    "Confirm": function() {
+                        $j(this).dialog("close");
+                    	var dialogType = $j(this).data("type").toLowerCase();
+                    	if (dialogType == "delete") {
+	                        
+	                        var deleteItemsList = [];
+	                        deleteItemsList.push($j(this).data("id"));
+	                        doDeleteItems(deleteItemsList.join(","));
+	                        
+                    	} else if (dialogType == "close") {
+                    		
+	                        // Get opportunitites
+	                        var opportunityIdList = [];
+	                        $j(".list-item-checkable:checked").each(function() {
+	                            var itemId = $j(this).data("id");
+	                            if (itemId != undefined && itemId != null && itemId != "") {
+	                                opportunityIdList.push($j(this).data("id"));
+	                            }
+	                        });
+	                        
+                    		var stage = $j(this).data("close-type").toLowerCase();
+							var closeReason, closeDesc;
+							
+                       		if (stage.indexOf("won") > -1) {
+		                        closeReason = $closeOpportunityDialog.find("#close-won-reason").val();
+		                        if (closeReason == null || closeReason == "" 
+		                        		|| closeReason == $j("#close-won-reason").children(0).val()) {
+		                        	window.alert("Please select a Closed WON reason.");
+		                        	return false;
+		                        }
+		                        
+		                        if (closeReason.toLowerCase() == "other") {
+			                       	closeDesc = $closeOpportunityDialog.find("#close-won-description").val();
+			                        if (closeDesc == null || closeDesc == "") {
+			                        	window.alert("You MUST enter a description when the close reason is 'Other'.");
+			                        	return false;
+			                        }
+		                        }
+                       		} else if (stage.indexOf("lost") > -1) {
+		                        closeReason = $closeOpportunityDialog.find("#close-lost-reason").val();
+		                        if (closeReason == null || closeReason == "" 
+		                        		|| closeReason == $j("#close-lost-reason").children(0).val()) {
+		                        	window.alert("Please select a Closed LOST reason.");
+		                        	return false;
+		                        }
+		                        
+		                        if (closeReason.toLowerCase() == "other") {
+			                       	closeDesc = $closeOpportunityDialog.find("#close-lost-description").val();
+			                        if (closeDesc == null || closeDesc == "") {
+			                        	window.alert("You MUST enter a description when the close reason is 'Other'.");
+			                        	return false;
+			                        }
+		                        }
+                       		}
+	                        
+                   			doCloseOpportunity(opportunityIdList.join(","), stage, closeReason, closeDesc);
+                   			$closeOpportunityDialog.dialog("close");
+                   			
+                    	}
+                    },
+                    Cancel: function() {
+                        $j(this).dialog("close");
+                    }
+                }
+            });
+            
+            initializeComponent();
+            
+            if ({!showAll} 
+            		&& $j(".list-item-checkable").length > 0 
+            		&& $j(".list-item-checkable").length < 3) { 
+            	closeCheckedItems(); 
+            }
+        });
+        
+        /* Initialize event listeners and identifiers for the component  */
+        initializeComponent = function() {
+			
+            // Attach click event to checkbox header column
+            $j("#list-item-check-all").click(function() {
+                affectCheckBoxes($j(".list-item-checkable:enabled"), $j(this).prop("checked"));
+            });
+            
+			// Attach click event to ALL list links
+			if ({!!showAll}) {
+				$j(".list-link").click(function() {
+					var urlString = "/" + $j(this).data("id");
+					navigateTo(urlString);
+				});
+			}
+			
+            // Attach click event to EDIT link
+            $j(".action-edit").click(function() {
+            	urlString = "/" + $j(this).data("id") + "/e?retURL=%2F{!parentObject.Id}";
+                navigateTo(urlString); 
+            });
+            
+            // Attach click event to DELETE links
+            $j(".action-delete").click(function() {
+
+                var itemId = $j(this).data("id");
+                var itemName = $j(this).data("name");
+                
+                // Prompt user to confirm
+                $confirmDialog.data("id", itemId);
+                $confirmDialog.data("type", "delete");
+                $confirmDialog.html(
+                        '<p class="dialog-text">Are you sure you want to delete the item:'
+                        + '<br/><br/><i>' + itemName + '</i></p>'); 
+                $confirmDialog.dialog("open");
+                $confirmDialog.dialog("option", "title", "Delete");
+            });
+            
+            // Attach click event to VIEW ALL button
+            $j("#ViewAll").click(function() {
+                var urlString = "{!URLFOR($Page.AccountOpportunities, null, [id=parentObject.Id, showAll='true'], true)}";
+                navigateTo(urlString);
+                return false;
+            });
+            
+            // Attach click event to UPDATE button
+            $j("#UpdateOpptys").click(function() {
+                
+                // Check for selected items
+                if ($j(".list-item-checkable:checked").length == 0) {
+                    window.alert("Please select at least one item to update.");
+                    return false;
+                }
+                
+                $j(".stage-change-line-item > select").val("");
+	        	$stageChangeDialog.dialog("open");
+	        	$stageChangeDialog.dialog("option", "title", "Change Opportunity Stage");
+			});
+				
+            // Attach click event to CLOSE button
+            $j("#CloseOpptys").click(function() {
+                closeCheckedItems();
+            });
+            
+            // Attach click event to RETURN-TO-SENDER button
+            $j("#ReturnToSender").click(function() {
+            	var urlString="/{!parentObject.Id}";
+            	navigateTo(urlString);
+            });
+        };
+        
+        closeCheckedItems = function() {
+			var $checkableItemList = $j(".list-item-checkable");
+			
+			// Check for selected items
+			if ($j(".list-item-checkable:checked").length == 0) {
+				if ($checkableItemList.length > 2) {
+					window.alert("Please select at least one item to update.");
+					return false;
+				} else {
+					$checkableItemList.prop("checked", true);
+				}
+			}
+			
+			// Get activities
+			var checkedItemIdList = [];
+			$j(".list-item-checkable:checked").each(function() {
+				var itemId = $j(this).data("id");
+				if (itemId != undefined && itemId != null && itemId != "") {
+					checkedItemIdList.push($j(this).data("id"));
+				}
+			});
+
+            // Get the stage-change line items
+            doReadOpportunityProducts(checkedItemIdList.join(","));
+        };
+        
+        showCloseOpportunityDialog = function() {
+        	$closeOpportunityDialog.dialog("open");
+        	$closeOpportunityDialog.dialog("option", "title", "Close Opportunities by Line Item");
+        };
+        
+        /* Selects/Deselects checkboxes */
+        affectCheckBoxes = function($checkboxes, checked) {
+            $checkboxes.each(function() {
+                $j(this).prop("checked", checked);
+            });
+        };
+        
+        navigateTo = function(urlString) {
+			if ({!showAll} == true) {
+				window.location.href = urlString;
+			} else {
+				window.open(urlString, "_blank");
+			}
+        };
+        
+    </script>
+    
+    <apex:actionRegion >
+        
+        <apex:actionFunction name="doReadOpportunityProducts" action="{!readOpportunityProducts}"
+            onComplete="showCloseOpportunityDialog(); return false;"
+            rerender="CloseOpportunityDialog">
+            <apex:param name="opportunityIdList" value="" />
+		</apex:actionFunction>
+		            
+        <apex:actionFunction name="doChangeOpportunityStage" action="{!changeOpportunityStage}"
+            onComplete="initializeComponent(); return false;" 
+            rerender="OpportunityList">
+            <apex:param name="opportunityIdList" value="" />
+            <apex:param name="newStage" value="" />
+        </apex:actionFunction>
+            
+        <apex:actionFunction name="doCloseOpportunity" action="{!closeOpportunity}"
+            onComplete="initializeComponent(); return false;" 
+            rerender="OpportunityList">
+            <apex:param name="opportunityIdList" value="" />
+            <apex:param name="stage" value="" />
+            <apex:param name="closeReason" value="" />
+            <apex:param name="closeDescription" value="" />
+        </apex:actionFunction>
+        
+        <apex:actionFunction name="doCloseOpportunityByProduct" action="{!closeOpportunityByProduct}"
+            onComplete="initializeComponent(); return false;" 
+            rerender="OpportunityList">
+            <apex:param name="opportunityIdList" value="" />
+            <apex:param name="stageChangeJson" value="" />
+        </apex:actionFunction>
+        
+        <apex:actionFunction name="doDeleteItems" action="{!deleteItems}"
+            onComplete="initializeComponent(); return false;" 
+            rerender="OpportunityList">
+            <apex:param name="deletedItemIdList" value="" />
+        </apex:actionFunction>
+        
+    </apex:actionRegion>
+    
+    <apex:outputText value="{!parentObjectRecordName}" styleClass="page-title" rendered="{!showAll}" />
+    
+    <apex:pageBlock id="OpportunityList" title="Opportunities">
+        
+        <apex:pageMessage strength="3" escape="false"
+                severity="error" 
+                title="{!pageError.Summary}"
+                summary="{!pageError.Detail}"
+                rendered="{!hasPageError}" />
+    
+    	<apex:facet name="header">
+    		<div class="list-header">
+	   			<div class="list-header-title">Opportunities</div>
+	   			<div class="list-header-buttons">
+		            <input type="button" id="ViewAll" value="View All" 
+		                style="display: {!IF(AND(!hasPageError, !ISNULL(recordList), !showAll), 'inherit', 'none')};" />
+		            <input type="button" id="ReturnToSender" value="Return to {!parentObjectName}"
+		                title="Return to the {!LOWER(parentObjectName)} page"
+		                style="display: {!IF(showAll, 'inherit', 'none')};" />
+		            <input type="button" id="CloseOpptys" value="Close Opportunity" data-type="partial"
+		                title="Close all selected opportunities (allows selection of individual products)"
+		                style="display: {!IF(AND(!hasPageError, !ISNULL(recordList), showAll), 'inherit', 'none')};" />
+		            <input type="button" id="UpdateOpptys" value="Change Stage" data-type="full"
+		            	title="Change the stage of all selected opportunities"
+		                style="display: {!IF(AND(!hasPageError, !ISNULL(recordList), showAll), 'inherit', 'none')};" />
+	   			</div>
+    		</div>
+        </apex:facet>
+        
+        <apex:pageBlockSection columns="1" showHeader="false" rendered="{!!hasPageError}">
+            
+            <apex:outputPanel layout="block" styleClass="empty-list" rendered="{!ISNULL(recordList)}">
+                No records to display.
+            </apex:outputPanel>
+            
+            <apex:pageBlockTable id="OpportunitiesTable" value="{!recordList}" var="record"
+                    rendered="{!NOT(ISNULL(recordList))}">
+                
+                <apex:column style="width: 22px;" rendered="{!showAll}">
+                    <apex:facet name="header">
+                        <input type="checkbox" id="list-item-check-all" class="list-item-checkable" />
+                    </apex:facet>
+                    <apex:outputPanel rendered="{!record.OwnerId = $User.Id}">
+	                    <input type="checkbox" class="list-item-checkable" data-id="{!record.Id}" />
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{!record.OwnerId != $User.Id}">
+	                    <input type="checkbox" class="list-item-checkable" data-id="{!record.Id}" disabled="disabled" />
+                    </apex:outputPanel>
+                </apex:column>
+                
+                <apex:column styleClass="listitem-column" >
+                    <apex:facet name="header">
+						<apex:commandLink action="{!sortByHeader}" 
+								value="" 
+								rerender="OpportunitiesTable">
+							<apex:param value="OpptyName" name="sortColumn"></apex:param>
+							<apex:outputText value="{!$ObjectType.Opportunity.fields.Name.Label} {!IF(sortExpression=='OpptyName', arrowDisplay,'')}"
+									escape="false"/>
+						</apex:commandLink>
+                    </apex:facet>
+                    <a href="{!IF(showAll, '/' + record.Id, '#')}" class="list-link" data-id="{!record.Id}">{!record.Name}</a>
+                </apex:column>
+                
+                <apex:column styleClass="listitem-column" >
+                    <apex:facet name="header">
+						<apex:commandLink action="{!sortByHeader}" 
+								value="" 
+								rerender="OpportunitiesTable">
+							<apex:param value="SiteName" name="sortColumn"></apex:param>
+							<apex:outputText value="Site {!IF(sortExpression=='SiteName', arrowDisplay,'')}"
+									escape="false"/>
+						</apex:commandLink>
+                    </apex:facet>
+                    <a href="{!IF(showAll, '/' + record.AccountId, '#')}" class="list-link" data-id="{!record.AccountId}">{!record.Account.Name}</a>
+                </apex:column>
+                
+                <apex:column styleClass="listitem-column" >
+                    <apex:facet name="header">
+						<apex:commandLink action="{!sortByHeader}" 
+								value="" 
+								rerender="OpportunitiesTable">
+							<apex:param value="StageName" name="sortColumn"></apex:param>
+							<apex:outputText value="{!$ObjectType.Opportunity.fields.StageName.Label} {!IF(sortExpression=='StageName', arrowDisplay,'')}"
+									escape="false"/>
+						</apex:commandLink>
+                    </apex:facet>
+                    {!record.StageName}
+                </apex:column>
+                
+                <apex:column styleClass="listitem-column" >
+                    <apex:facet name="header">
+						<apex:commandLink action="{!sortByHeader}" 
+								value="" 
+								rerender="OpportunitiesTable">
+							<apex:param value="RoomCount" name="sortColumn"></apex:param>
+							<apex:outputText value="{!$ObjectType.Opportunity.fields.of_Rooms_in_Hotel__c.Label} {!IF(sortExpression=='RoomCount', arrowDisplay,'')}"
+									escape="false"/>
+						</apex:commandLink>
+                    </apex:facet>
+                    {!record.of_Rooms_in_Hotel__c}
+                </apex:column>
+                
+                <apex:column styleClass="listitem-column" >
+                    <apex:facet name="header">
+						<apex:commandLink action="{!sortByHeader}" 
+								value="" 
+								rerender="OpportunitiesTable">
+							<apex:param value="CloseDate" name="sortColumn"></apex:param>
+							<apex:outputText value="{!$ObjectType.Opportunity.fields.CloseDate.Label} {!IF(sortExpression=='CloseDate', arrowDisplay,'')}"
+									escape="false"/>
+						</apex:commandLink>
+                    </apex:facet>
+					<apex:outputText value="{0,date,MM'/'dd'/'yyyy}">
+					    <apex:param value="{!record.CloseDate}" /> 
+					</apex:outputText>
+                    
+                </apex:column>
+                
+                <apex:column styleClass="listitem-column" >
+                    <apex:facet name="header">
+						<apex:commandLink action="{!sortByHeader}" 
+								value="" 
+								rerender="OpportunitiesTable">
+							<apex:param value="OwnerName" name="sortColumn"></apex:param>
+							<apex:outputText value="{!$ObjectType.Opportunity.fields.OwnerId.Label} {!IF(sortExpression=='OwnerName', arrowDisplay,'')}"
+									escape="false"/>
+						</apex:commandLink>
+                    </apex:facet>
+                    <a href="{!IF(showAll, '/' + record.OwnerId, '#')}" class="list-link" data-id="{!record.OwnerId}">{!record.Owner.Name}</a>
+                </apex:column>
+                
+            </apex:pageBlockTable>
+        </apex:pageBlockSection>
+    </apex:pageBlock>
+
+    <!-- --------------------------------------------------------------------------------------- -->
+    <!-- DIALOGS                                                                                 -->
+    <!-- --------------------------------------------------------------------------------------- -->
+    
+    <!-- CONFIRM DELETE DIALOG -->
+    <div id="confirm-dialog" class="confirm-dialog" style="display: none;">
+    </div>
+    
+    <!-- STAGE-CHANGE DIALOG -->
+	<div id="stage-change-dialog" class="dialog-form" style="display: none;">
+    	<apex:outputPanel id="StageChangeDialog">
+			
+			<p class="empty-list">To update the stage for all selected products, select a stage from 
+			the list below.</p>
+			
+			<div class="stage-change-line-item" style="width: 100%;">
+				<select>
+					<apex:repeat value="{!opportunityStages}" var="stage">
+						<option value="{!stage.value}">{!stage.label}</option>
+					</apex:repeat>
+				</select>
+			</div>
+		
+		</apex:outputPanel>
+	</div>
+    
+    <!-- CLOSE OPPORTUNITY DIALOG -->
+	<div id="close-opportunity-dialog" class="dialog-form" style="display: none;">
+    	<apex:outputPanel id="CloseOpportunityDialog">
+			
+            <apex:outputPanel layout="block" styleClass="empty-list" rendered="{!ISNULL(opptyProductList)}">
+                No products found for the selected opportunities.
+            </apex:outputPanel>
+            
+            <apex:outputPanel layout="block" rendered="{!!ISNULL(opptyProductList)}">
+				<p class="empty-list">To close individual opportunity products, select a close stage from the list  
+				to the right of the desired opportunity product.<br/><br/>To close <b><u>all</u></b> opportunity products with  
+				the same stage, use the <i>Won All</i> or <i>Lost All</i> buttons at the bottom.</p>
+				
+	           	<apex:repeat value="{!opptyProductList}" var="p">
+	           		
+	           		<div class="stage-change-row">
+		           		<div class="stage-change-line-item" style="font-size: 1.2em; line-height: 2.4em; width: 300px;">{!p.productName}</div>
+		           		
+		           		<div class="stage-change-line-item" style="float: right;" 
+		           				data-product-id="{!p.productId}" data-product-name="{!HTMLENCODE(p.productName)}">
+		           			<select class="stage-change-options">
+			           			<apex:repeat value="{!opportunityCloseStages}" var="stage">
+			           				<option value="{!stage.value}">{!stage.label}</option>
+			           			</apex:repeat>
+		           			</select>
+		           		</div>
+	           		</div>
+	           		
+	           	</apex:repeat>
+	           	
+           		<div class="stage-change-row" style="height: 80px; background: whitesmoke;">
+	           		<div class="stage-change-line-item" 
+	           			style="font-size: 1.2em; font-weight: bold; line-height: 2.4em; width: 300px;"
+	           			>Select a Close WON Reason</div>
+	           		
+	           		<div class="stage-change-line-item" style="float: right;"> 
+						<select id="close-won-reason">
+							<option value="">Select a Reason</option>
+							<option value="Installation Date">Installation Date</option>
+							<option value="Price">Price</option>
+							<option value="Product Features">Product Features</option>
+							<option value="Service/Support">Service/Support</option>
+							<option value="Other">Other</option>
+						</select>
+					</div>
+					
+	           		<div class="stage-change-line-item" style="width: 100%">
+						<textarea id="close-won-description" rows="3" cols="90" maxLength="255"
+							style="margin-top: 5px; resize: none;"
+							placeholder="If you selected 'Other' above, please enter a brief description here"/>
+					</div>
+				</div>
+				
+           		<div class="stage-change-row" style="height: 80px; background: whitesmoke;">
+	           		<div class="stage-change-line-item" 
+	           			style="font-size: 1.2em; font-weight: bold; line-height: 2.4em; width: 300px;"
+	           			>Select a Close LOST Reason</div>
+	           		
+	           		<div class="stage-change-line-item" style="float: right;">
+						<select id="close-lost-reason">
+							<option value="">Select a Reason</option>
+							<option value="Canceling due to Denials">Canceling due to Denials</option>
+							<option value="Competitor">Competitor</option>
+							<option value="Gone to Retention">Gone to Retention</option>
+							<option value="Hotel Closing">Hotel Closing</option>
+							<option value="Installation Date">Installation Date</option>
+							<option value="Keeping Current Contract">Keeping Current Contract</option>
+							<option value="Sonify Losing Money">Sonify Losing Money</option>
+							<option value="No Budget">No Budget</option>
+							<option value="Non Profittable Hotel">Non Profittable Hotel</option>
+							<option value="Not Going Forward">Not Going Forward</option>
+							<option value="Old Record">Old Record</option>
+							<option value="Price">Price</option>
+							<option value="Product Features">Product Features</option>
+							<option value="Service/Support">Service/Support</option>
+							<option value="Retention Only - No Opportunity">Retention Only - No Opportunity</option>
+							<option value="Currently Not Interested">Currently Not Interested</option>
+							<option value="Other">Other</option>
+						</select>
+					</div>
+					
+	           		<div class="stage-change-line-item" style="width: 100%">
+						<textarea id="close-lost-description" rows="3" cols="90" maxLength="255"
+							style="margin-top: 5px; resize: none;"
+							placeholder="If you selected 'Other' above, please enter a brief description here"/>
+					</div>
+				</div>
+
+			</apex:outputPanel>
+		</apex:outputPanel>
+	</div>
+	
+</apex:component>

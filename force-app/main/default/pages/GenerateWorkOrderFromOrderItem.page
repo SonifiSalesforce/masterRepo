@@ -1,0 +1,11 @@
+<apex:page standardController="Order_Item__c" extensions="OrderItemExtension"  recordSetVar="orderitems">
+<apex:form >
+	<apex:pageBlock title="Create Project" mode="read">
+		<apex:pageBlockTable value="{!selected}" var="ord">
+			<apex:column value="{!ord.name}"/>
+			<apex:column value="{!ord.ID}"/>
+		</apex:pageBlockTable>
+       
+    </apex:pageBlock>
+</apex:form>
+</apex:page>

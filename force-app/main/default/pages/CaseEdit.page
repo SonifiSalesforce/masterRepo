@@ -1,0 +1,1151 @@
+<apex:page title="Edit Case"
+		tabStyle="Case"
+		standardController="Case" 
+		extensions="CaseEditExtension">
+	
+	<script type="text/javascript" src="/soap/ajax/26.0/connection.js"/>
+	<script type="text/javascript" src="/support/console/26.0/integration.js"/>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js" />
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js" />
+	
+    <style>
+    	.ui-dialog {
+    		background: whitesmoke;
+    		z-index: 999;
+    		border: 1px solid black;
+    		border-radius: 3px;
+    	}
+    	
+		.ui-dialog-titlebar-close {
+			display: none;
+		}
+		
+		.ui-dialog-buttonpane {
+			padding: 0px 13px 15px 13px;
+		}
+		
+		.ui-button {
+			padding: 7px;
+		}
+    	
+    	#ui-dialog-backdrop {
+    		position: absolute;
+    		top: 1px;
+    		left: 1px;
+    		height: 100%;
+    		width: 100%;
+    		background: black;
+    		opacity: .6;
+    		z-index: 998;
+    	}
+    	
+    	.dialog {
+    		background: #f8f8f8;
+    	}
+    	
+    	#header-block {
+    		background: transparent;
+    		margin: 0px 15px;
+    		// margin: 15px 30px 25px 30px;
+    	}
+    	
+    	#header-block h1 {
+    		font-size: 2em;
+    		font-weight: normal;
+    		margin: 5px 0px;
+    	}
+    	
+    	#header-block p {
+    		line-height: 1.5em;
+    	}
+    	
+    	#entitlement-block {
+    		background: white;
+			border: 1px solid lightgray;
+			border-radius: 3px;
+			margin: 10px 13px;
+    	}
+    
+    	.entitlement-option {
+			padding: 5px;
+			margin: 3px;
+    	}
+    	
+    	.entitlement-option:hover {
+			background: #F39814;
+    	}
+    	
+    	.entitlement-option-title {
+    		display: inline;
+    		padding: 0px 5px;
+    		font-weight: bold;
+    	}
+    	
+    	.entitlement-option-description {
+    		display: inline;
+    		padding: 0px 5px;
+    	}
+    	
+    	.selected {
+			background: #FECA40;
+    	}
+    	
+    	#milestone-block {
+    		background: white;
+			border: 1px solid lightgray;
+			border-radius: 3px;
+			margin: 10px 13px;
+			min-height: 125px;
+			max-height: 150px;
+			overflow-y: scroll;
+    	}
+    	
+    	#milestone-table {
+    		width: 100%;
+			border-spacing:0;
+    		border-collapse:collapse;    		
+    	}
+    	
+    	#milestone-table thead {
+			background: lightslategray;
+			line-height: 2em;    		
+    	}
+    	
+    	#milestone-table thead td {
+    		padding: 0px 5px;
+			color: white;
+    	}
+    	
+    	#milestone-table tr {
+    		border-bottom: 1px solid lightgray;
+    	}
+    	
+    	#milestone-table td {
+    		padding: 5px;
+    	}
+    	
+    	.milestone-name {
+    		width: 125px;
+    	}
+    	
+    	.milestone-time {
+    		width: 100px;
+    	}
+    	
+    	#case-history-block {
+    		background: whitesmoke;
+    		border: 1px solid lightgray;
+    		margin: 5px 0px;
+    	}
+    	
+    	#history-table {
+    		width: 100%;
+			border-spacing:0;
+    		border-collapse:collapse;    		
+    	}
+    	
+    	#history-table thead {
+			background: lightslategray;
+			line-height: 2em;    		
+			font-weight: bold;
+    	}
+    	
+    	#history-table thead td {
+    		padding: 0px 5px;
+			color: white;
+    	}
+    	
+    	#history-table tr {
+    		border-bottom: 1px solid lightgray;
+    	}
+    	
+    	#history-table td {
+    		padding: 5px;
+    	}
+    	
+    	.history-item-header {
+    		background: #e0e0ef;
+    	}
+    	
+    	.history-item-detail {
+    		padding: 5px 0px 5px 25px !important;
+    		line-height:1.5em;
+    	}
+    	
+    	.history-item-detail p {
+    		background: white;
+    		margin: 5px 25px 5px 0px;
+    		padding: 5px;
+    	}
+    	
+    	#flash-notification-block {
+    		background: whitesmoke;
+    		border: 1px solid lightgray;
+    		margin: 5px 0px;
+    	}
+		
+    	#flash-table {
+    		width: 100%;
+			border-spacing:0;
+    		border-collapse:collapse;    		
+    	}
+    	
+    	#flash-table tr {
+    		border-bottom: 1px solid lightgray;
+    	}
+    	
+    	#flash-table td {
+    		padding: 5px;
+    	}
+    	
+    	#flash-table thead {
+			background: lightslategray;
+			line-height: 2em;    		
+			font-weight: bold;
+    	}
+    	
+    	#flash-table thead td {
+    		padding: 0px 5px;
+			color: white;
+    	}
+    	
+        .flash-subject {
+        	float: left;
+        	padding-right: 10px;
+        	width: 325px;
+        	min-width: 250px;
+        	color: inherit;
+        }
+        
+        .flash-subject a {
+        	color: inherit;
+        	
+        }
+        
+        .flash-subject a:hover {
+        	color: inherit;
+        	
+        }
+        
+        .flash-description {
+        	width: 100%;
+        	color: inherit;
+        }
+        
+        .flash-description a {
+        	color: inherit;
+        }
+        
+        .flash-description a:hover {
+        	color: inherit;
+        }
+        
+        .flash-date {
+        	width: 125px;
+        	min-width: 125px;
+        	color: inherit;
+        }
+        
+        .flash-notification {
+        	font-weight: normal;
+        }
+        
+        .flash-notification-urgent {
+        	// font-weight: bold;
+        	background: #bf0000;
+        	color: white;
+        }
+    	
+    	.empty-list {
+            color: black;
+            background: whitesmoke;
+            border: 1px solid lightgray;
+            padding: 5px;
+        }
+        
+        .loading-list {
+            color: darkgray;
+            background: whitesmoke;
+            border: 1px solid lightgray;
+            padding: 5px;
+        }
+        
+        .hover-detail-icon {
+        	
+        }
+        
+        .helpIcon {
+			background: transparent url(/img/alohaSkin/help_orange.png) no-repeat;
+        }
+        
+        .hover-detail-popup {
+			position: absolute;
+			left: 375px;
+			padding: 15px;
+            background: whitesmoke;
+            border: 2px outset lightgray;
+            border-radius: 5px;
+            max-width: 600px;
+        }
+        
+		textarea {
+		 	width: 90%;
+		 	resize: both;
+		}
+		
+		.button-link {
+			
+		}
+    </style>
+    
+	<script>
+    	var $j = jQuery.noConflict();
+    	
+    	var urlPrefix = '{!$Site.Prefix}';
+    	var caseId = '{!Case.Id}';
+		var accountId = '{!Case.AccountId}';
+		var caseOwner = '{!Case.OwnerId}';
+		var caseCreatedOn = '{!createdDateFormatted}';
+    	var baseEntitlementId = '{!baseEntitlementId}';
+    	var closedCaseStatuses;
+    	var entitlementIdPrior, entitlementChanged = false;
+    	
+    	var $entitlementDialog, $noEntitlementDialog, $confirmDialog, $dialogBackdrop;
+    	var $entitlement, $entitlementId, $entitlementName;
+    	var $serviceContract, $serviceContractId, $serviceContractName;
+    	var $priority, $caseNumber;
+    	
+		$j(document).ready(function() {
+			
+			$dialogBackdrop = $j("#ui-dialog-backdrop");
+			
+			/* CONFIRM PROMPT DIALOG */
+			$confirmDialog = $j("#confirm-dialog");
+			$confirmDialog.dialog({
+            	dialogClass: 'ui-dialog',
+                autoOpen: false,
+            	closeOnEscape: false,
+            	width: 400,
+                resizable: false,
+                modal: true,
+                buttons: {
+                    "Confirm": function() {
+                    	
+                        $j(this).dialog("close");
+                        $dialogBackdrop.hide();
+                    	
+			           	// Process base Sla
+						doGetSla(baseEntitlementId);
+                    },
+                    Cancel: function() {
+                        $j(this).dialog("close");
+                    	$dialogBackdrop.hide();
+                    }
+                }
+			});
+			
+			/* NO ENTITLEMENT DIALOG */
+			$noEntitlementDialog = $j("#no-entitlement-dialog");
+            $noEntitlementDialog.dialog({
+            	dialogClass: 'ui-dialog',
+                autoOpen: false,
+            	closeOnEscape: false,
+                width: 425,
+                resizable: false,
+                modal: true,
+                buttons: {
+                    "Get Non-Contracted": function() {
+                    	
+                    	doGetBaseSla();
+                    	
+                        $j(this).dialog("close");
+                        $dialogBackdrop.hide();
+                    },
+                    Cancel: function() {
+                        $j(this).dialog("close");
+                    	$dialogBackdrop.hide();
+                    }
+                }
+            });
+			
+			/* ENTITLEMENT SELECTOR DIALOG */
+			$entitlementDialog = $j("#entitlement-dialog");
+            $entitlementDialog.dialog({
+                dialogClass: 'ui-dialog',
+                autoOpen: false,
+                closeOnEscape: false,
+                width: 600,
+                resizable: false,
+                modal: true,
+                buttons: {
+                    "Save Selected Entitlement": function() {
+                    	
+                    	var $entitlementBlock = $j(this).find("#entitlement-block");
+                    	
+                    	// Check for change in entitlement
+                    	var newEntitlementId = $entitlementBlock.data("entitlement-id");
+                    	if (newEntitlementId != $entitlementId.val()) {
+                    		
+                    		var newEntitlementName = $entitlementBlock.data("entitlement-name");
+                    		
+                    		// Write updated values to entitlement fields
+                    		$entitlementId.val(newEntitlementId);
+                    		$entitlementName.val(newEntitlementName);
+                    		$entitlement.val(newEntitlementName);
+                    		
+                    		var newServiceContractId = $entitlementBlock.data("service-contract-id");
+                    		var newServiceContractName = $entitlementBlock.data("service-contract-name");
+                    		
+							// Write service contract values
+							$serviceContract.val(newServiceContractName);
+							$serviceContractName.val(newServiceContractName);
+							$serviceContractId.val(newServiceContractId);
+							
+                    	}
+                    	
+                    	// Set priority
+                    	$priority.val($j(".entitlement-option.selected").find("input[type='radio']").val());
+                    	$j("[id*=CasePriority]").val($priority.val());
+                    	
+                    	// Build synopsis of milestones for selected priority
+                    	var milestoneSynopsis = []
+                    	$j(".milestone-row:visible").each(function() {
+                    		var milestoneDetails = [];
+                    		$j(this).find("td").each(function() {
+                    			milestoneDetails.push($j(this).html());
+                    		});
+                    		milestoneSynopsis.push(milestoneDetails[0] + ':  ' + milestoneDetails[1] + ' - ' + milestoneDetails[2]);
+                    	});
+                    	
+                    	// Check for milestones found
+                    	if (milestoneSynopsis.length != 0) {
+	                    	$j(document).find("[name*='MilestoneSynopsis']").html(milestoneSynopsis.join("\n\n"));
+                    	}
+                    	
+                        $j(this).dialog("close");
+                        $dialogBackdrop.hide();
+                    },
+                    Cancel: function() {
+                        $j(this).dialog("close");
+                        $dialogBackdrop.hide();
+                    }
+                }
+            });
+            
+            // Remove 'Closed' statuses from the list
+            try { 
+            	closedCaseStatuses = [JSON.parse('{!closedCaseStatusJSON}')][0]; 
+	            if (closedCaseStatuses != null && closedCaseStatuses != undefined) {
+	            	$statusList = $j(document.getElementById($j("label:contains('Status'):eq(0)").prop("for")));
+	            	if ($statusList != undefined) {
+		            	var statusNdx = 0, maxStatusNdx = closedCaseStatuses.length;
+		            	do {
+			            	// console.debug('Removing status option "' + closedCaseStatuses[statusNdx] + '"');
+		            		try { $statusList.find("option[value='" + closedCaseStatuses[statusNdx] + "']").remove(); }
+		            		catch (err) {}
+		            		statusNdx++;
+		            	} while(statusNdx < maxStatusNdx);
+	            	}
+	            }
+            } catch (err) {}
+            
+			initializeComponent();
+		});
+		
+		/* Initialze UI Components (MUST be called with any new page load)  */
+		var initializeComponent = function() {
+			
+			// Find entitlement field
+			var fieldId = $j(document).find("label:contains('{!$ObjectType.Entitlement.Fields.Name.Label}')").prop("for");
+			if (fieldId === null || fieldId === undefined) {
+				
+				$j("#GetSla").hide();
+				
+			} else {
+				
+				$entitlement = $j(document.getElementById(fieldId));
+				$entitlementId = $j(document.getElementById(fieldId + '_lkid'));
+				$entitlementName = $j(document.getElementById(fieldId + '_lkold'));
+				
+				$entitlement.change(function() { 
+					
+					entitlementChanged = true; 
+				});
+				
+				$entitlement.blur(function() {
+					// Check for change in value
+					if (entitlementChanged) {
+						entitlementChanged = false;
+						doGetServiceContract($entitlementId.val()); 
+					} 
+				});
+				
+				// Find service contract field
+				fieldId = $j(document).find("label:contains('{!$ObjectType.ServiceContract.Fields.Name.Label}')").prop("for");
+				if (fieldId !== null && fieldId !== undefined) {
+					$serviceContract = $j(document.getElementById(fieldId));
+					$serviceContractId = $j(document.getElementById(fieldId + '_lkid'));
+					$serviceContractName = $j(document.getElementById(fieldId + '_lkold'));
+	    		}
+	    		
+	    		// Find priority field
+				// NOTE This is highly suspect as 'Priority' could be 'contained' in more than one label
+				// TODO Consider checking the "for" to see if it's a SELECT tag and, if not, iterate over ALL matching labels
+				// until one is found.
+	    		fieldId = $j(document).find("label:contains('{!$ObjectType.Case.Fields.Priority.Label}'):eq(0)").prop("for");
+				if (fieldId !== null && fieldId !== undefined) {
+					$priority = $j(document.getElementById(fieldId));
+					$priority.prop("disabled", true);
+				}
+			}
+			
+			// Find Case Owner field
+			try {
+				fieldId = $j(document).find("label:contains('Case Owner')").prop("for");
+				if (fieldId !== null && fieldId !== undefined) {
+					
+					var optionHtml = [
+						'<option value="005" selected="selected">User</option>',
+						'<option value="case_queue">Queue</option>',
+						'<option value="PartnerUserLookup">Partner User</option>',
+						'<option value="NonLpuCustomerSuccessUserLookup">Customer Portal User</option>'
+					];
+					
+					// Get the select list
+					$j(document.getElementById(fieldId.replace('_top', '_mlktp'))).html(optionHtml.join(""));
+					
+				}
+			} catch (err) {}
+			
+			// Check for new case
+            if (caseId == null || caseId == '') {
+            	
+            	try {
+            		// Find the Case Number field
+	            	$caseNumber = $j("label:contains('{!$ObjectType.Case.Fields.CaseNumber.Label}'):eq(0)").parent().next(".dataCol").children("span")
+	            	if ($caseNumber !== null && $caseNumber !== undefined) {
+		            	
+		            	// Check for previously identified case number (for new cases only)
+		            	if ($j("#NewCaseNumber").val()) {
+		            		$caseNumber.html($j("#NewCaseNumber").val());
+		            	} else {
+			            	// Add link to quick-create a case Id
+		            		$caseNumber.html('<a href="#" onclick="quickCreateCase(); return false;">Get Case Number</a>');
+		            	}
+	            	}
+            	} catch (err) {}
+            }
+            
+			// Get flash notifications
+			doGetFlashNotifications();
+		};
+		
+		/* Create a case and set the Case Number field to the Id (only used with new cases) */
+		quickCreateCase = function() {
+			$caseNumber.html('Generating Case Number...'); // added jjohnson09182014 - BUG-00406
+			CaseEditExtension.CreateCase(
+				caseOwner, 
+				caseCreatedOn, 
+				accountId, 
+				$entitlementId.val(), 
+				$serviceContractId.val(), 
+				function(newCase, event) {
+					
+					if (!event.status) {
+						alert(event.message);
+						return false;
+					}
+					
+					// Set the case Id and number
+					$j("#NewCaseId").val(newCase.Id);
+					$j("#NewCaseNumber").val(newCase.CaseNumber);
+					$caseNumber.html(newCase.CaseNumber);
+				}
+			);
+		};
+		
+		/* Navigate to a specified Url in either the standard or service cloud console */
+        navigateTo = function(urlString) {
+        	
+        	// Check for service cloud console
+        	try {
+	        	if (sforce.console.isInConsole()) {
+					// Get the enclosing primary tab id.
+					sforce.console.getEnclosingPrimaryTabId(function(result) {
+						// Use the results primary tab id and open a new subtab
+						sforce.console.openSubtab(result.id,urlString, true); 
+					});
+		       		return false;
+	        	}
+        	} catch (err) {}
+        	
+        	if (urlPrefix != null && urlPrefix != '') { urlString = urlPrefix + '/' + urlString; }
+	       		window.open(urlString, "_blank");
+        	
+        }; 
+		
+		/* Get the base (non-contracted) entitlement id */
+		function doGetBaseSla() {
+			
+			// Check for base entitlement already identified
+			// NOTE Failsafe only. The base entitlement Id should ALWAYS be known at this point.
+			if (baseEntitlementId == null) {
+				 
+				// Get base entitlement
+				CaseEditExtension.GetBaseEntitlementId(function(resultId, event) {
+					
+					if (!event.status) {
+						entitlementId = null;
+						alert(event.message);
+						return false;
+					}
+					
+					// Set the base entitlement and call the get base sla function
+					baseEntitlementId = resultId;
+					return doGetBaseSla();
+	           	});
+	           	
+	           	return false;
+           	}
+           	
+           	// Check for current entitlement
+           	// console.debug('Current Entitlement: ' + $entitlementName.val());
+           	// console.debug('Current Entitlement Id: ' + $entitlementId.val());
+           	// console.debug('Base Entitlement Id: ' + baseEntitlementId);
+           	if ($entitlementId.val() != "" 
+           		&& $entitlementId.val().substring(0, 3) != "000" 
+           		&& $entitlementId.val() != baseEntitlementId) {
+				
+				$dialogBackdrop.show();
+				$confirmDialog.dialog("open");
+				
+				return false;
+           	}
+           	
+          	// Process base Sla
+			doGetSla(baseEntitlementId);
+           	return false;
+		}
+		
+		/*  */
+		function doGetServiceContract(entitlementId) {
+			
+			CaseEditExtension.GetServiceContract(entitlementId, function(detail, event) {
+				
+				if (!event.status) { return false; }
+				
+				// Set service contract values
+				$serviceContract.val(detail.serviceContractName);
+				$serviceContractName.val(detail.serviceContractName);
+				$serviceContractId.val(detail.serviceContractId);
+			});
+		}
+		
+		/* Get flash notifications for account */
+		function doGetFlashNotifications() {
+			
+			// Check for account Id
+			if (accountId === null || accountId === '') { return false; }
+			
+			// Get flash notifications
+			CaseEditExtension.GetFlashNotifications(accountId, 
+				
+				function(flashList, event) {
+					
+					// console.debug('Flash Result: ' + event); 
+					
+					// Check for error
+					if (!event.status) { return false; }
+					 
+					// Iterate over flash notifications and create UI
+					var ndx = 0, maxNdx = 0;
+					if (flashList != null) { maxNdx = flashList.length; }
+					
+					// console.debug('Flash List Length: ' + maxNdx);
+					// console.debug('Flash List: ' + JSON.stringify(flashList));
+					
+					if (maxNdx > 0) {
+						var flashHtml = [ '<thead><tr>'
+										 + '<td>Flash Notifications</td>'
+										 + '<td>Description</td>'
+										 + '<td>Start Date</td>'
+										 + '<td>End Date</td>'
+										 + '</tr></thead>' 
+									   ];
+	
+						while (ndx < maxNdx) {
+							
+							var flashDescription = null;
+							var flashDescriptionFull = null;
+							
+							if (flashList[ndx].description == undefined || flashList[ndx].description == null || flashList[ndx].description.length == 0) {
+								
+								// do nothing
+								
+							} else {
+								
+								flashDescriptionFull = flashList[ndx].description;
+								
+								var htmlCharNdx = flashDescriptionFull.indexOf('<');
+								if (htmlCharNdx > -1) {
+									if (htmlCharNdx > 0) {
+										flashDescription = flashDescriptionFull.substring(0, htmlCharNdx); 
+									}
+								} else {
+									flashDescription = flashDescriptionFull; 
+								}
+								if (flashDescription == null || flashDescription.length == 0) {
+									flashDescription = 'click for full details'
+								} else if (flashDescription.length > 100) {
+									flashDescription = flashDescription.substring(0, 100) + '...'; 
+								}
+							}
+							
+							flashHtml.push(
+								'<tr class="flash-notification' + (flashList[ndx].isUrgent ? '-urgent' : '') + '">'
+								+ '<td class="flash-subject">'
+									+ '<a href="#" onclick="navigateTo(\'/' + flashList[ndx].flashId + '\')">' + flashList[ndx].subject + '</a>'
+								+ '</td>'
+								+ '<td class="flash-description">'
+									+ '<a href="#" onclick="return false;" class="flash-hover" style="display: '  
+										+ (flashDescription == null ? 'none' : 'inherit') + '">' + flashDescription + '</a>'  
+									+ '<div class="hover-detail-popup" data-id="' + flashList[ndx].flashId + '" style="display: none; color: black; font-weight: normal;">' 
+										+ flashDescriptionFull
+									+ '</div>'
+								+ '</td>'
+								+ '<td class="flash-date">' + flashList[ndx].startDateFormatted + '</td>'
+								+ '<td class="flash-date">' + flashList[ndx].endDateFormatted + '</td>'
+							);
+							
+							ndx++;
+							// console.debug(flashHtml[ndx]);
+						};
+						
+						$j("#flash-notification-block").html('<table id="flash-table">' + flashHtml.join("") + '</table>');
+						
+						$j(".flash-hover").click(
+							function() {
+								$j(".hover-detail-popup").hide();
+								$j(this).next(".hover-detail-popup").show();
+							});
+						
+						$j(".hover-detail-popup").hover(
+							function() {},
+							function() {
+								$j(this).hide();
+							}
+						);
+						
+					} else {
+						$j("#flash-notification-block").html('<div class="empty-list">No flash notifications have been created for this account.</div>');
+					}
+					
+					doGetCaseHistory();
+				},
+				{ escape: false }
+			);
+		}
+		
+		/* Get interaction history for this case */
+		function doGetCaseHistory() {
+			
+			// Check for case Id
+			if (caseId == null || caseId == "") { return false; }
+			
+			// Get case interaction history
+			CaseEditExtension.GetCaseInteractionHistory(caseId, 
+				function(historyList, event) {
+					
+					// Check for error
+					if (!event.status) { return false; }
+					 
+					// Iterate over flash notifications and create UI
+					var ndx = 0, maxNdx = 0;
+					if (historyList != null) { maxNdx = historyList.length; }
+					
+					// console.debug('Flash List Length: ' + maxNdx);
+					if (maxNdx > 0) {
+						var historyHtml = [ 
+										 '<thead><tr>'
+										 + '<td>Case Interaction History</td>'
+										 + '</tr></thead>' 
+									   ];
+	
+						while (ndx < maxNdx) {
+							var historyItem = '<tr class="history-item-header">'
+								+ '<td><b>' + historyList[ndx].objectName + '</b>' 
+									+ ' Created by ' + historyList[ndx].createdBy 
+									+ ' on ' + historyList[ndx].createdDateFormatted 
+								+ '</td></tr>';
+							
+							if (historyList[ndx].header != null || historyList[ndx].details != null) {
+								historyItem += '<tr><td class="history-item-detail">';
+								 if (historyList[ndx].header != null && historyList[ndx].header != "") {
+									historyItem += historyList[ndx].header.split("\n").join("<br/>");
+								 }
+								 
+								if (historyList[ndx].details != null && historyList[ndx].details != "") {
+									// if (historyList[ndx].header != null) { historyItem += '<br/>'; }
+									historyItem += '<p>' + historyList[ndx].details.split("\n").join("<br/>") + '</p>';
+								}
+								
+								historyItem += '</td></tr>';
+							}
+							
+							historyHtml.push(historyItem);
+								
+							ndx++;
+						};
+						
+						$j("#case-history-block").html('<table id="history-table">' + historyHtml.join("") + '</table>');
+						
+					} else {
+						
+						$j("#case-history-block").html('<div class="empty-list">No interaction history found for this case.</div>');
+					
+					}
+				},
+				{ escape: false }
+			);
+		}
+		
+		/* Reads severity description from the selected entitlement 
+		 * and then pops a box for the user to select  */
+		function doGetSla(entitlementId) {
+			
+			// Check for no entitlement Id passed
+			if (entitlementId == null) {
+			
+				// Check for no field found
+				if ($entitlementId === null || $entitlementId === undefined) {
+					alert("ERROR Could not find Entitlement field on page. Please contact your administrator.");
+					return false;
+				}
+				
+				// Read entitlement Id from form field
+				entitlementId = $entitlementId.val();
+			}
+			
+			// Check for no entitlement identified
+			if (entitlementId == null || entitlementId == "" || entitlementId.substr(0, 3) == "000") {
+				$dialogBackdrop.show();
+				$noEntitlementDialog.dialog("open");
+				return false;
+			}
+			
+			// Check for change in entitlement
+			if (entitlementId == entitlementIdPrior) {
+				
+				// No change. Just show the dialog
+				$dialogBackdrop.show();
+				$entitlementDialog.dialog("open");
+				return false;
+			}
+			
+			// Read the details for the entitlement
+			CaseEditExtension.GetEntitlementDetails(entitlementId, 
+				function(details, event) {
+					
+					if (!event.status) {
+						entitlementId = null;
+						alert(event.message);
+						return false;
+					}
+					
+					if (details == null) { 
+						entitlementId = null
+						alert('No details found for entitlement. Please check severity fields on the Entitlement.');
+						return false; 
+					}
+					
+					// Entitlement has changed
+					entitlementIdPrior = entitlementId;
+					
+					try {
+						var mileHtml = [ '<thead><tr>'
+										 + '<td class="milestone-name">Name</td>'
+										 + '<td>Description</td>'
+										 + '<td align="right" class="milestone-time">Time to Complete</td>'
+										 + '</tr></thead>' 
+									   ];
+						
+						var options = details.entitlementOptions;
+						var optNdx = 0, optNdxMax = options.length;
+						var optHtml = [];
+						while (optNdx < optNdxMax) {
+							
+							var opt = options[optNdx];
+							
+							// Build entitlement option html
+							optHtml.push(
+								'<div class="entitlement-option" data-key="' + opt.priority.toLowerCase() + '">'
+								+ '<input type="radio" value="' + opt.priority + '">'
+								+ '<div class="entitlement-option-title">' + opt.priority + '</div>' 
+								+ '<div class="entitlement-option-description">' + opt.description + '</div>'
+								+ '</input></div>'
+							);
+							
+							// Check for milestones configured
+							var mileNdxMax = opt.milestones.length;
+							if (mileNdxMax == 0) {
+								mileHtml.push(
+									'<tr class="milestone-row priority-' + opt.priority.toLowerCase() + '" style="display: none;">'
+									+ '<td>No Milestones</td>'
+									+ '<td>No milestones have been configured for this severity.</td>'
+									+ '<td align="right"></td>'
+									+ '</tr>'
+								)
+							} else {
+							
+								// Build milestone html
+								var mileNdx = 0;
+								while (mileNdx < mileNdxMax) {
+									mileHtml.push(
+										'<tr class="milestone-row priority-' + opt.priority.toLowerCase() + '" style="display: none;">'
+										+ '<td>' + opt.milestones[mileNdx].name + '</td>'
+										+ '<td>' + opt.milestones[mileNdx].description + '</td>'
+										+ '<td align="right">' + opt.milestones[mileNdx].timeToComplete + '</td>'
+										+ '</tr>'
+									)
+									mileNdx++
+								}
+							}
+							
+							optNdx++;
+						}
+						
+						// Add entitlement options and milestones to the page
+						$j("#entitlement-block")
+							.data("entitlement-id", details.entitlementId)
+							.data("entitlement-name", details.entitlementName)
+							.data("service-contract-id", details.serviceContractId)
+							.data("service-contract-name", details.serviceContractName)
+							.html(optHtml.join(""));
+						$j("#milestone-table").html(mileHtml.join(""));
+						
+						
+						// Add listeners to entitlement options
+						$j(".entitlement-option").click(function() {
+							
+							// Affect entitlement options
+							$j(".entitlement-option").removeClass("selected").find("input").prop("checked", false);
+							$j(this).addClass("selected").children("input:eq(0)").prop("checked", true);
+							
+							// Affect milestones
+							var key = $j(this).data("key");
+							$j(".milestone-row").hide();
+							$j(".milestone-row.priority-" + key).show();
+							
+						});
+						
+						$j(".entitlement-option:eq(0)").click();
+						
+						$dialogBackdrop.show();
+						$entitlementDialog.dialog("open");
+						
+					} catch (err) {
+						entitlementId = null; 
+						alert(err);
+						return false;
+					}
+				}, 
+				{ escape: false }
+			);
+		}
+		
+		/* NOTE CANNOT DO BOTH HERE!!! */
+		saveCase = function(saveAndClose, saveAndNew) {
+			
+			var caseId = $j("#NewCaseId").val();
+			// console.debug("SaveCase. caseId: " + caseId);
+			
+			// Save and close current case
+			if (saveAndClose) {
+				doSaveAndClose(caseId);
+				return false;
+			}
+			
+			// Save and create new case
+			if (saveAndNew) {
+				doSaveAndNew(caseId);
+				return false;
+			}
+			
+			// Base save
+			doSaveCase(caseId);
+		}
+	</script>
+	
+	<input id="NewCaseId" type="hidden" />
+	<input id="NewCaseNumber" type="hidden" />
+	
+	<apex:form id="CaseEditForm">
+		
+		<apex:actionFunction name="doSaveCase" action="{!Save}" rerender="CaseEditForm" oncomplete="initializeComponent();">
+			<apex:param name="CaseId" assignTo="{!newCaseId}" value="" />
+		</apex:actionFunction>
+		
+		<apex:actionFunction name="doSaveAndClose" action="{!SaveAndClose}" rerender="CaseEditForm" oncomplete="initializeComponent();">
+			<apex:param name="CaseId" assignTo="{!newCaseId}" value="" />
+		</apex:actionFunction>
+		
+		<apex:actionFunction name="doSaveAndNew" action="{!SaveAndNew}" rerender="CaseEditForm" oncomplete="initializeComponent();">
+			<apex:param name="CaseId" assignTo="{!newCaseId}" value="" />
+		</apex:actionFunction>
+		
+		<div id="flash-notification-block">
+			<div class="loading-list">Loading flash notifications for this account...</div>
+		</div>
+		
+		<apex:pageMessages showDetail="true" escape="false" />
+		
+		<apex:inputHidden id="RecordTypeId" value="{!Case.RecordTypeId}" />
+		<apex:inputHidden id="IsClosed" value="{!Case.IsClosed}" />
+		<apex:inputTextArea id="MilestoneSynopsis" value="{!milestoneSynopsis}" style="display: none;" />
+		<apex:inputText id="CasePriority" value="{!casePriority}" style="display: none;" />
+		
+		<apex:pageBlock title="Case Edit" mode="mainDetail">
+			
+			<apex:pageBlockButtons >
+				<apex:commandButton value="Cancel" action="{!Cancel}" />
+				<apex:commandButton value="Save" onclick="saveCase(); return false;" />
+				<apex:commandButton value="Save & New" onclick="saveCase(false, true); return false;" />
+				<apex:commandButton value="Save & Close" onclick="saveCase(true, false); return false;" />
+				<input type="button" id="GetSla" value="Get SLA" onclick="doGetSla(null); return false;" class="btn" />
+				<input type="button" id="GetBaseSla" value="Get Non-Contracted SLA" onclick="doGetBaseSla(); return false;" class="btn" />
+				<input type="button" id="KB" class="btn" value="KB" onclick="window.open('http://kbdev.lodgenet.com/'); return false;" />
+				<input type="button" id="SCM" class="btn" value="SCM" onclick="window.open('https://scm.lodgenet.com/'); return false;" />
+				<a href="#case-history-block" class="button-link">Go to Case History</a>
+			</apex:pageBlockButtons>
+			
+			<apex:pageBlockSection columns="2" title="{!fieldSetNames['Support_Case']}">
+				<apex:repeat value="{!$ObjectType.Case.FieldSets.Support_Case}" var="field">
+					<apex:outputField value="{!Case[field]}" 
+						rendered="{!field.FieldPath = 'OwnerId'}" />
+					<apex:inputField value="{!Case[field]}" 
+						required="{!OR(field.required, field.dbrequired)}" 
+						rendered="{!NOT(field.FieldPath = 'OwnerId')}" />
+				</apex:repeat>
+			</apex:pageBlockSection>
+			
+			<apex:pageBlockSection columns="1" title="{!fieldSetNames['X2_Subject_and_Comments']}">
+				<apex:repeat value="{!$ObjectType.Case.FieldSets.X2_Subject_and_Comments}" var="field">
+					<apex:inputField value="{!Case[field]}" 
+						required="{!OR(field.required, field.dbrequired)}" />
+				</apex:repeat>
+
+				<apex:pageBlockSectionItem helpText="Comments typed here will be added to the Case Comments list and will be public.">
+	          		<apex:outputLabel value="Comments" /> 
+					<apex:inputTextArea value="{!externalComments}" /> 
+				</apex:pageBlockSectionItem>
+				
+				<apex:pageBlockSectionItem helpText="Comments typed here will be added to the Case Comments list and will not be visible to the customer.">
+	          		<apex:outputLabel value="Internal Comments" /> 
+					<apex:inputTextArea value="{!internalComments}" /> 
+				</apex:pageBlockSectionItem>
+				
+			</apex:pageBlockSection>
+			
+			<apex:pageBlockSection columns="2" title="{!fieldSetNames['X3_Entitlement_Process']}">
+				<apex:repeat value="{!$ObjectType.Case.FieldSets.X3_Entitlement_Process}" var="field">
+					<apex:inputField value="{!Case[field]}" 
+						required="{!OR(field.required, field.dbrequired)}" />
+				</apex:repeat>
+			</apex:pageBlockSection>
+			
+			<apex:pageBlockSection columns="2" title="{!fieldSetNames['Legacy_Fields']}">
+				<apex:repeat value="{!$ObjectType.Case.FieldSets.Legacy_Fields}" var="field">
+					<apex:inputField value="{!Case[field]}" 
+						required="{!OR(field.required, field.dbrequired)}" />
+				</apex:repeat>
+			</apex:pageBlockSection>
+			
+			<apex:pageBlockSection columns="2" title="{!fieldSetNames['X5_Information_Entered_on_Web_Forms']}">
+				<apex:repeat value="{!$ObjectType.Case.FieldSets.X5_Information_Entered_on_Web_Forms}" var="field">
+					<apex:inputField value="{!Case[field]}" 
+						required="{!OR(field.required, field.dbrequired)}" />
+				</apex:repeat>
+			</apex:pageBlockSection>
+			
+			<apex:pageBlockSection columns="2" title="{!fieldSetNames['X6_Other_Info']}">
+				<apex:repeat value="{!$ObjectType.Case.FieldSets.X6_Other_Info}" var="field">
+					<apex:inputField value="{!Case[field]}" 
+						required="{!OR(field.required, field.dbrequired)}" />
+				</apex:repeat>
+			</apex:pageBlockSection>
+			
+			<apex:pageBlockSection columns="2" title="{!fieldSetNames['X7_System_Fields']}">
+				<apex:repeat value="{!$ObjectType.Case.FieldSets.X7_System_Fields}" var="field">
+					<apex:outputField value="{!Case[field]}" />
+				</apex:repeat>
+			</apex:pageBlockSection>
+			
+			<apex:pageBlockSection columns="2" title="Optional">
+				<apex:pageBlockSectionItem >
+	          		<apex:outputLabel value="Assign using active assignment rules" /> 
+					<apex:inputCheckbox value="{!applyAssignmentRules}" /> 
+				</apex:pageBlockSectionItem>
+			</apex:pageBlockSection>
+			
+		</apex:pageBlock>
+		
+		<div style="height: 10px; padding-right: 3px;"><a href="#top" class="button-link" style="float: right;">back to top</a></div>
+		<div id="case-history-block">
+			<div class="loading-list">Loading interaction history for this case...</div>
+		</div>
+		
+	</apex:form>
+		
+    <!-- --------------------------------------------------------------------------------------- -->
+    <!-- DIALOGS                                                                                 -->
+    <!-- --------------------------------------------------------------------------------------- -->
+    
+    <div id="ui-dialog-backdrop" style="display: none;" />
+    
+    <!--  CONFIRM PROMPT DIALOG -->
+    <div id="confirm-dialog" style="display: none;">
+    	<div id="header-block">
+			<h1>Override Existing Entitlement?</h1>
+			<p>Are you sure you want to override the existing entitlement with the Non-Contracted Entitlement?</p>
+    	</div>
+    </div>
+    
+    <!-- NO ENTITLEMENT DIALOG -->
+    <div id="no-entitlement-dialog" style="display: none;">
+    	<div id="header-block">
+			<h1>No entitlement selected.</h1>
+			<p>Please select an entitlement for this case or click the 'Get Non-Contracted' 
+			button below to use the non-contracted entitlement.</p>
+    	</div>
+	</div>		
+    
+    <!-- ENTITLEMENT SELECTOR DIALOG -->
+    <div id="entitlement-dialog" style="display: none;">
+    	
+		<div class="missing-entitlement-data" style="display: none;">
+			<b>MISSING ENTITLEMENT DESCRIPTIONS</b><br/><br/>
+			Could not locate severity details on the entitlement. Please add severity information to
+			the entitlement for selecting.
+		</div>
+		
+		<div class="entitlement-data">
+			
+			<div id="header-block">
+				<h1>Select a Severity</h1>
+				
+				<p>Select a severity from the list below to see the milestones that have been configured for it.
+				When you have identified the appropriate severity, click the 'Save Selected Entitlement' button
+				to save your selection to the case.</p>
+			</div>
+			
+			<div id="entitlement-block"/>
+			
+			<div id="milestone-block">
+				<table id="milestone-table"/>
+			</div>
+			
+		</div>
+    	
+    </div>
+	
+</apex:page>

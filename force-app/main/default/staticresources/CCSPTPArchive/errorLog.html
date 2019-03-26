@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="scripts/jquery-1.11.3.min.js"></script>
+<style type="text/css">
+* {
+	font-size: 9pt;
+	font-family: tahoma;
+}
+
+body {
+	background-color: white;
+	color: black;
+	padding: 0;
+	margin: 0;
+	font-family: tahoma; /* verdana, arial; */
+	overflow: hidden;
+}
+
+thead {
+	display: block;
+}
+
+tbody {
+	display: block;
+	overflow-y: scroll;
+	height: 150px;
+}
+
+
+.title {
+	font-size: 12pt;
+	color: #666666;
+	font-weight: bold;
+	padding-bottom: 10px;
+	margin-bottom: 0px;
+}
+
+.log-table-div {
+	width: 100%;
+}
+
+.log-table {
+	width: 100%;
+}
+
+.time-column-header {
+	background-color: lightgray;
+	text-align: left;
+	width: 80px;
+	min-width: 80px;
+	border-bottom: solid black 1px;
+}
+
+.message-column-header {
+	background-color: lightgray;
+	text-align: left;
+	width: 100%; 
+	border-bottom: solid black 1px;
+}
+
+.time-value {
+	font-family: Courier New, Courier;
+	text-wrap: none;
+	width: 80px;
+	min-width: 80px;
+/*	border-right: dashed grey 1px; */
+/*	border-bottom: dashed grey 1px; */
+}
+
+.message-value {
+	font-family: Courier New, Courier;
+	text-wrap: none;
+	width: 100%; 
+/*	border-bottom: dashed grey 1px; */
+	overflow: visible;
+}
+
+</style>
+<title>Softphone error</title>
+</head>
+<body>
+    <div class="title">Recent errors
+    </div>
+    <div class="log-table-div">
+        <table class="log-table">
+            <thead>
+                <tr>
+                    <th class="time-column-header">Time</th>
+                    <th class="message-column-header">Error</th>
+                </tr>
+            </thead>
+            <tbody id="tbody-logs"></tbody>
+        </table>
+    </div>
+
+    <script type="text/javascript">
+
+		function htmlEncode(value) {
+			return $('<div/>').text(value).html();
+		}
+
+		function htmlDecode(value) {
+			return $('<div/>').html(value).text();
+		}
+
+		function displayLogs(tbody, logs) {
+			var n, l = logs.length;
+			for (n = 0; n < l; n++) {
+				tbody.append(logrow(logs[n][0], logs[n][1]));
+			}
+		}
+
+		function logrow(hms, msg) {
+			return '<tr><td><div class="time-value">' + htmlEncode(hms) + '</div></td><td><div class="message-value">' + htmlEncode(msg) + '</div></td></tr>';
+		}
+
+        $(function () {
+
+			if (opener && opener.getLogs) {
+				displayLogs($('#tbody-logs'), opener.getLogs());
+			} else {
+				alert("Error in log retrieval. The softphone url might not be in the trusted zone.");
+			}
+        });
+
+    </script>
+</body>
+</html>

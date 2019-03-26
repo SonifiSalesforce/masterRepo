@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<callCenter>
+  <section sortOrder="0" name="reqGeneralInfo" label="General Information">
+    <item sortOrder="0" name="reqInternalName" label="InternalName">CCSPIntegration</item>
+    <item sortOrder="1" name="reqDisplayName" label="Display Name">Enghouse Interactive CCSP</item>
+    <item sortOrder="2" name="reqDescription" label="Description">Enghouse Interactive CCSP CTI for ccu6.1.1</item>
+    <item sortOrder="3" name="reqAdapterUrl" label="CTI Adapter URL">https://ccsp-dev-ed--enghouse-ccsp.na47.visual.force.com/apex/sf_ccsp</item>
+    <item sortOrder="4" name="reqUseApi" label="Use CTI API">true</item>
+    <item sortOrder="5" name="reqSoftphoneHeight" label="Softphone Height">830</item>
+    <item sortOrder="6" name="reqSoftphoneWidth" label="Softphone Width">370</item>
+  </section>
+  <section sortOrder="1" name="ServerInfo" label="CTC Server Information">
+    <item sortOrder="0" name="CTCServerName" label="CTC Server Name">https://ps-tp2.dn12.loc/hubservice/signalr</item>
+  </section>
+  <section sortOrder="2" name="customOptions" label="Custom Options">
+    <item sortOrder="0" name="VoiceIncomingSearchOptions" label="VoiceIncomingSearchOptions">1;2;3</item>
+    <item sortOrder="1" name="VoiceIncomingSearchOption1" label="VoiceIncomingSearchOption1">apex: Enghouse_CCSP.AccountRetrieval ; GetCustomerbyId ; CustomerId=CustomerId*</item>
+    <item sortOrder="2" name="VoiceIncomingSearchOption2" label="VoiceIncomingSearchOption2">objectId: CustomerObjectId</item>
+    <item sortOrder="3" name="VoiceIncomingSearchOption3" label="VoiceIncomingSearchOption3">callerId</item>
+    <item sortOrder="4" name="VoiceDialerSearchOptions" label="VoiceDialerSearchOptions">1;2;3</item>
+    <item sortOrder="5" name="VoiceDialerSearchOption1" label="VoiceDialerSearchOption1">objectId: CID</item>
+    <item sortOrder="6" name="VoiceDialerSearchOption2" label="VoiceDialerSearchOption2">apex: Enghouse_CCSP.AccountRetrieval ; GetCustomerbyId ; CustomerId=CustomerId*</item>
+	<item sortOrder="7" name="VoiceDialerSearchOption3" label="VoiceDialerSearchOption3">callerId</item>
+	<item sortOrder="8" name="ChatIncomingSearchOptions" label="ChatIncomingSearchOptions">1;2;3</item>
+    <item sortOrder="9" name="ChatIncomingSearchOption1" label="ChatIncomingSearchOption1">apex: AccountRetrievalNoSpacename ; GetCustomerbyId ; CustomerId=CustomerId*</item>
+    <item sortOrder="10" name="ChatIncomingSearchOption2" label="ChatIncomingSearchOption2">objectId: CustomerObjectId</item>
+    <item sortOrder="11" name="ChatIncomingSearchOption3" label="ChatIncomingSearchOption3">callerId</item>
+	<item sortOrder="12" name="click2DialOptions" label="click2DialOptions">confirmAlways=yes ; disableTransfer = yes</item>
+	<item sortOrder="13" name="hideTrace" label="hideTrace">yes</item>
+	<item sortOrder="14" name="touchPointURL" label="Url of TouchPoint">https://dnccsp12.dn12.loc/touchpoint</item>
+  </section>
+</callCenter>

@@ -1,0 +1,154 @@
+<apex:page id="FlashNotificationPage" 
+           title="Flash Notification" 
+           name="FlashNotificationPage"
+           extensions="FlashNotificationExtension"
+           standardController="Case"
+           tabStyle="Case">
+    
+    <script type="text/javascript" src="/soap/ajax/26.0/connection.js"/>
+    <script type="text/javascript" src="/support/console/26.0/integration.js"/>
+    
+    <style>
+        #flash-notification-block {
+            background: whitesmoke;
+            border: 1px solid lightgray;
+            margin: 5px 0px;
+        }
+        
+        #flash-table {
+            width: 100%;
+            border-spacing:0;
+            border-collapse:collapse;           
+        }
+        
+        #flash-table tr {
+            border-bottom: 1px solid lightgray;
+        }
+        
+        #flash-table td {
+            padding: 5px;
+        }
+        
+        #flash-table thead {
+            background: lightslategray;
+            line-height: 2em;           
+            font-weight: bold;
+        }
+        
+        #flash-table thead td {
+            padding: 0px 5px;
+            color: white;
+        }
+        
+        .flash-subject {
+            float: left;
+            padding-right: 10px;
+            width: 325px;
+            min-width: 250px;
+            color: inherit;
+        }
+        
+        .flash-subject a {
+            color: inherit;
+            
+        }
+        
+        .flash-subject a:hover {
+            color: inherit;
+            
+        }
+        
+        .flash-description {
+            width: 100%;
+            color: inherit;
+        }
+        
+        .flash-description a {
+            color: inherit;
+        }
+        
+        .flash-description a:hover {
+            color: inherit;
+        }
+        
+        .flash-date {
+            width: 125px;
+            min-width: 125px;
+            color: inherit;
+        }
+        
+        .flash-notification {
+            font-weight: normal;
+        }
+        
+        .flash-notification-urgent {
+            // font-weight: bold;
+            background: #bf0000;
+            color: white;
+        }
+        
+        .empty-list {
+            color: black;
+            background: whitesmoke;
+            border: 1px solid lightgray;
+            padding: 5px;
+        }
+    </style>
+    
+    <script>
+        /* Navigate to a specified Url in either the standard or service cloud console */
+        navigateTo = function(urlString) {
+            
+            // Check for service cloud console
+            if (!sforce.console.isInConsole()) {
+                window.open(urlString, "_blank");
+                return false;
+            }
+            
+            // Get the enclosing primary tab id.
+            sforce.console.getEnclosingPrimaryTabId(function(result) {
+                // Use the results primary tab id and open a new subtab
+                sforce.console.openSubtab(result.id,urlString, true); 
+            });
+        }; 
+    </script>
+    
+    <input type="hidden" value="{!Case.AccountId}" />
+    
+    <apex:outputPanel layout="block" id="flash-notification-block">
+        
+        <table id="flash-table">
+            
+            <apex:outputPanel layout="block" styleClass="empty-list" rendered="{!ISNULL(flashNotifications)}">
+                No flash notifications have been created for this account.              
+            </apex:outputPanel>
+            
+            <apex:outputPanel rendered="{!!ISNULL(flashNotifications)}">
+                
+                <thead>
+                    <tr>
+                        <td>Notification</td>
+                        <td>Start Date</td>
+                        <td>End Date</td>
+                    </tr>
+                </thead>
+                
+                <apex:repeat value="{!flashNotifications}" var="item">
+                    
+                    <tr class="flash-notification{!IF(item.isUrgent, '-urgent', '')}">
+                        <td class="flash-subject">
+                            <a href="#" onclick="navigateTo('/{!item.flashId}')">{!item.subject}</a>
+                        </td>
+                        <td class="flash-date">{!item.startDateFormatted}</td>
+                        <td class="flash-date">{!item.endDateFormatted}</td>
+                    </tr>
+                    
+                </apex:repeat>
+                
+            </apex:outputPanel>
+            
+        </table>
+        
+    </apex:outputPanel>
+    
+</apex:page>

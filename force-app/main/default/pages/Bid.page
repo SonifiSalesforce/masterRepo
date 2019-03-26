@@ -1,0 +1,209 @@
+<apex:page standardController="Bid__c" extensions="BidExtension">
+
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js" ></script>
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js" ></script>
+	<script type="text/css">		
+		.disabledSection {
+			opacity: 0.5;
+			background: #CCC;
+			filter:Alpha(opacity=50);
+		}
+    </script>
+	
+	<script type="text/javascript">
+		var elementFocus = null;
+		var previousElementFocus = null;
+		
+		function retainFocus(){
+			var element = null;
+			if((elementFocus.id==null || elementFocus.id=="") && (previousElementFocus.id!=null && previousElementFocus.id!="")) {
+				element = document.getElementById(previousElementFocus.id);
+				elementFocus = previousElementFocus;
+				previousElementFocus = null;
+			} else {
+				element = document.getElementById(elementFocus.id);
+			}
+			element.focus();
+		}
+		
+		function jsSum() { 
+	    	callGrandTotal();
+		}       
+    </script>
+    
+	<apex:form onkeypress="return event.keyCode != 13;">		
+		<apex:actionfunction name="callGrandTotal" action="{!sumTotals}" reRender="grand" />
+		<apex:pageBlock id="pageBlock">
+			<apex:pageMessages />
+			<apex:pageBlockButtons >
+				<apex:commandButton value="Save" action="{!saveAll}" id="saveAllItems"/> 
+				<apex:commandButton value="Cancel" action="{!cancel}" immediate="true"/>
+			</apex:pageBlockButtons>
+			<apex:pageBlockSection title="Bid" >
+				<apex:inputField value="{!bidCard.Site_Survey__c}" />
+				<apex:inputField value="{!bidCard.Work_Order__c}" /> 
+				<apex:inputField value="{!bidCard.PO_Number__c}" /> 
+				<apex:inputField value="{!bidCard.Part_List__c}" />
+				<apex:inputField value="{!bidCard.Selected_Bid__c}" />
+			</apex:pageBlockSection>
+			<apex:pageBlockSection columns="1">
+				<apex:inputField style="width:80%" value="{!bidCard.Scope_of_Work__c}" />
+				<apex:inputField style="width:80%" value="{!bidCard.Comments__c}" />
+			</apex:pageBlockSection>
+			
+			<apex:repeat value="{!category2ProductMap}" var="category">
+				<apex:pageBlockSection title="{!category}" columns="1"> 
+					<apex:pageBlockTable value="{!category2ProductMap[category]}" var="item" id="table" columnsWidth="8%, 30%, 14%, 8%, 8%, 8%, 8%, 8%, 8%">
+						<apex:column >
+							<apex:facet name="header">Part #</apex:facet>
+							<apex:outputField value="{!productId2LineItem[item].bid.Task_Number__c}" />
+						</apex:column>
+						<apex:column >
+							<apex:facet name="header">Labor Task Name</apex:facet>
+							<apex:outputField value="{!productId2LineItem[item].bid.Product__c}" />
+						</apex:column> 
+						<apex:column >
+							<apex:facet name="header">Default Price</apex:facet>
+							<apex:outputField value="{!productId2LineItem[item].bid.Default_Price__c}"/>
+						</apex:column>
+						<apex:column rendered="{!bidcard.Approval_Status__c != 'Approved'}">
+							<apex:facet name="header">Price</apex:facet>
+							<apex:inputField value="{!productId2LineItem[item].bid.Price__c}" style="width:80%" >
+								<apex:actionsupport event="onchange" onbeforedomupdate="elementFocus = document.activeElement;" action="{!updateTotalPrice}" rerender="table" oncomplete="retainFocus();" focus="elementFocus">
+									<apex:param assignTo="{!itemId}" value="{!productId2LineItem[item].bid.Product__c}" name="productId"/>
+								</apex:actionsupport>
+							</apex:inputField>
+						</apex:column>
+						<apex:column rendered="{!bidcard.Approval_Status__c == 'Approved'}">
+							<apex:facet name="header">Price</apex:facet>
+							<apex:outputField value="{!productId2LineItem[item].bid.Price__c}" style="width:80%;">
+								
+							</apex:outputField>
+						</apex:column>
+						<apex:column >
+							<apex:facet name="header">Unit</apex:facet>
+							<apex:outputField value="{!productId2LineItem[item].bid.Unit__c}" />
+						</apex:column>
+						<apex:column rendered="{!bidcard.Approval_Status__c != 'Approved'}">
+							<apex:facet name="header">Quantity</apex:facet>
+							<apex:inputField value="{!productId2LineItem[item].bid.Quantity__c}" style="width:80%" >
+								<apex:actionsupport event="onchange" onbeforedomupdate="elementFocus = document.activeElement;" action="{!updateTotalPrice}" rerender="table" oncomplete="retainFocus();" focus="elementFocus">
+									<apex:param assignTo="{!itemId}" value="{!productId2LineItem[item].bid.Product__c}" name="productId"/>
+								</apex:actionsupport>
+							</apex:inputField>
+						</apex:column>
+						<apex:column rendered="{!bidcard.Approval_Status__c == 'Approved'}">
+							<apex:facet name="header">Quantity</apex:facet>
+							<apex:outputField value="{!productId2LineItem[item].bid.Quantity__c}" style="width:80%" >
+								<apex:actionsupport event="onchange" action="{!updateTotalPrice}" rerender="table" oncomplete="jsSum()">
+									<apex:param assignTo="{!itemId}" value="{!productId2LineItem[item].bid.Product__c}" name="productId"/>
+								</apex:actionsupport>
+							</apex:outputField>
+						</apex:column>
+						<apex:column id="TotalPrice">
+							<apex:facet name="header">Total Price<br />Estimate</apex:facet>
+							<apex:outputText value="{!totalPriceMap[item]}" />
+						</apex:column>
+						<apex:column rendered="{!bidcard.Approval_Status__c != 'Approved' && viewMargin}"  headerValue="Margin Percentage">
+							<apex:inputField value="{!productId2LineItem[item].bid.Margin__c}" style="width:80%" onblur="previousElementFocus=this;">%
+								<apex:actionsupport event="onchange" onbeforedomupdate="elementFocus = document.activeElement;" action="{!updateTotalPrice}" rerender="table" oncomplete="retainFocus();" focus="elementFocus">
+									<apex:param assignTo="{!itemId}" value="{!productId2LineItem[item].bid.Product__c}" name="productId"/>
+								</apex:actionsupport>
+							</apex:inputField> 
+						</apex:column>
+						<apex:column rendered="{!bidcard.Approval_Status__c == 'Approved' && viewMargin}" headerValue="Margin Percentage">
+							<apex:outputField value="{!productId2LineItem[item].bid.Margin__c}" style="width:80%" >%</apex:outputField>
+						</apex:column>
+						<apex:column id="TotalMarginPrice" rendered="{!viewMargin}">
+							<apex:facet name="header">Total Margin <br /> Price Estimate</apex:facet>
+							<apex:outputText value="{!totalMarginPriceMap[item]}" />
+						</apex:column>
+					</apex:pageBlockTable>
+				</apex:pageBlockSection>
+			</apex:repeat>
+			<apex:pageBlockSection title="Other" columns="1">
+				<apex:pageBlockTable value="{!otherbidCards}" var="item" id="OtherTable" columnsWidth="8%, 44%, 8%, 8%, 8%, 8%, 8%, 8%">
+					<apex:column rendered="{!bidcard.Approval_Status__c != 'Approved'}">
+						<apex:facet name="header">Task #</apex:facet>
+						<apex:inputText value="{!otherbidCards[item].Task_Number__c}" style="width:80%" />
+					</apex:column>
+					<apex:column rendered="{!bidcard.Approval_Status__c == 'Approved'}">
+						<apex:facet name="header">Task #</apex:facet>
+						<apex:outputText value="{!otherbidCards[item].Task_Number__c}" style="width:80%" />
+					</apex:column>
+					<apex:column rendered="{!bidcard.Approval_Status__c != 'Approved'}">
+						<apex:facet name="header">Description</apex:facet>
+						<apex:inputText value="{!otherbidCards[item].Description__c}" style="width:85%"  />
+					</apex:column>
+					<apex:column rendered="{!bidcard.Approval_Status__c == 'Approved'}">
+						<apex:facet name="header">Description</apex:facet>
+						<apex:outputText value="{!otherbidCards[item].Description__c}" style="width:85%"  />
+					</apex:column>
+					
+					<apex:column rendered="{!bidcard.Approval_Status__c != 'Approved'}" headerValue="Price"> 
+						<apex:inputText value="{!otherbidCards[item].Price__c}" style="width:80%" onblur="previousElementFocus=this;">
+							<apex:actionsupport event="onchange" onbeforedomupdate="elementFocus = document.activeElement;" action="{!updateTotalPrice}" rerender="OtherTable" oncomplete="retainFocus();" focus="elementFocus">
+								<apex:param assignTo="{!itemId}" value="{!item}" name="productsId"/>
+							</apex:actionsupport>
+						</apex:inputText>
+					</apex:column>
+					
+					<apex:column rendered="{!bidcard.Approval_Status__c == 'Approved'}" headerValue="Price">
+						<apex:outputText value="{!otherbidCards[item].Price__c}" style="width:80%" />
+					</apex:column>
+					<apex:column rendered="{!bidcard.Approval_Status__c != 'Approved'}">
+						<apex:facet name="header">Unit</apex:facet>
+						<apex:inputText value="{!otherbidCards[item].Unit__c}" style="width:80%" />							
+					</apex:column>
+					<apex:column rendered="{!bidcard.Approval_Status__c == 'Approved'}">
+						<apex:facet name="header">Unit</apex:facet>
+						<apex:outputText value="{!otherbidCards[item].Unit__c}" style="width:80%" />
+					</apex:column>
+					<apex:column rendered="{!bidcard.Approval_Status__c != 'Approved'}" headerValue="Quantity">
+						<apex:inputText value="{!otherbidCards[item].Quantity__c}" style="width:80%" >
+							<apex:actionsupport event="onchange" onbeforedomupdate="elementFocus = document.activeElement;" action="{!updateTotalPrice}" rerender="OtherTable" oncomplete="retainFocus();" focus="elementFocus">
+								<apex:param assignTo="{!itemId}" value="{!item}" name="productsId"/>
+							</apex:actionsupport>
+						</apex:inputText>
+					</apex:column>
+					<apex:column rendered="{!bidcard.Approval_Status__c == 'Approved'}" headerValue="Quantity">
+						<apex:outputText value="{!otherbidCards[item].Quantity__c}" style="width:80%;" />
+					</apex:column>
+					<apex:column id="TotalPrice">
+						<apex:facet name="header">Total Price<br />Estimate</apex:facet>
+						<apex:outputText value="{!totalPriceMap[item]}" style="width:80px" />
+					</apex:column>
+					<apex:column rendered="{!bidcard.Approval_Status__c != 'Approved' && viewMargin}" headerValue="Margin Percentage" >
+						<apex:inputField value="{!otherbidCards[item].Margin__c}" style="width:80%" onblur="previousElementFocus=this;">
+							<apex:actionsupport event="onchange" onbeforedomupdate="elementFocus = document.activeElement;" action="{!updateTotalPrice}" rerender="OtherTable" oncomplete="retainFocus();" focus="elementFocus">
+								<apex:param assignTo="{!itemId}" value="{!item}" name="productsId"/>
+							</apex:actionsupport>
+						</apex:inputField> 
+					</apex:column>
+					<apex:column rendered="{!bidcard.Approval_Status__c == 'Approved' && viewMargin}" headerValue="Margin Percentage">
+						<apex:outputField value="{!otherbidCards[item].Margin__c}" style="width:80%" />
+					</apex:column>
+					<apex:column id="TotalMarginPrice" rendered="{!viewMargin}">
+						<apex:facet name="header">Total Margin <br /> Price Estimate</apex:facet>
+						<apex:outputText value="{!totalMarginPriceMap[item]}" />
+					</apex:column>
+				</apex:pageBlockTable>
+				<apex:commandButton value="Add Other Task" action="{!addRow}" rerender="OtherTable" rendered="{!bidCard.Approval_Status__c != 'Approved'}" />
+			</apex:pageBlockSection>
+			<apex:pageBlockSection columns="1" id="grand">
+				<apex:outputPanel style="float:right; padding-right:10px" >
+					<apex:outputPanel style="font-size:16px;font-weight:bold;">
+						Grand Total Estimate: {!bidCard.CurrencyIsoCode} &nbsp;
+						<apex:outputText value="{!grandTotalString}" />
+					</apex:outputPanel>
+				</apex:outputPanel>
+				<apex:outputPanel style="float:right; padding-right:10px" rendered="{!viewMargin}">
+					<apex:outputPanel style="font-size:16px;font-weight:bold;">
+					Grand Total Estimate with Margin: {!bidCard.CurrencyIsoCode} &nbsp;
+						<apex:outputText value="{!grandTotalStringWMargin}" />
+					</apex:outputPanel>
+				</apex:outputPanel>
+			</apex:pageBlockSection>
+		</apex:pageBlock>
+	</apex:form>
+</apex:page>

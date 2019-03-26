@@ -1,0 +1,453 @@
+<apex:page standardcontroller="Contract" extensions="SubscriptionItemHierarchyExtension" cache="false">
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <script src="{!URLFOR($Resource.CustomResources, 'fancytree/src/jquery.fancytree.js')}" type="text/javascript"></script>
+    <script src="{!URLFOR($Resource.CustomResources, 'fancytree/src/jquery.fancytree.table.js')}" type="text/javascript"></script>
+    <apex:stylesheet value="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css" />  
+    <link href="{!URLFOR($Resource.CustomResources, 'fancytree/src/skin-lion/ui.fancytree.css')}" rel="stylesheet" type="text/css"></link>
+    
+    <style type="text/css"> 
+        #treetable{
+            width:100%;
+        }
+        table.fancytree-ext-table tbody tr:nth-child(even){
+            background-color: #f4f4f8;
+        }
+        .alignCenter {
+           text-align: center;
+        }
+        .subColor {
+           color: #1FB25A;
+        }
+        .entitlement-option {
+            padding: 10px;
+            margin: 5px;
+        }
+        
+        .entitlement-option:hover {
+            background: #F39814;
+        }
+        
+        .selected {
+            background: #FECA40;
+        }
+        body {
+            background: #f8f8f8;
+        }
+        
+        #main-content {
+            width: 925px;
+            background: transparent;
+        }
+        
+        
+        #footer-block {
+            background: transparent;
+            margin: 25px 25px;
+        }
+        
+        #save-entitlement {
+            float: right;
+            padding: 10px;
+            border: 1px solid lightgray;
+        }
+        
+        #entitlement-block {
+            
+        }
+    </style>
+       
+    <script type="text/javascript">
+        j$ = jQuery.noConflict();
+        
+        var selectedKeys = [];
+        var selectedNodes = [];
+        
+        var noOrderSelected = false;
+        
+        
+        j$(document).ready(function() {
+            initializeComponent();
+            j$(".entitlement-option:eq(0)").click();
+        });
+        
+        /* Initialze UI Components (MUST be called with any new page load)  */
+        var initializeComponent = function() {
+            j$("#popup").dialog({ autoOpen: false, modal: true, position: 'center', width:'700', height:'400'  });
+            j$("#massUpdatePopup").dialog({ autoOpen: false, modal: true, position: 'center', width:'600', height:'350'  });
+            
+            
+            
+            j$(".entitlement-option").click(function() {
+                j$(".entitlement-option").removeClass("selected").find("input").prop("checked", false);
+                j$(this).addClass("selected").children("input:eq(0)").prop("checked", true);
+            });
+            
+            j$("#save-entitlement").click(function() {
+                saveSelectedEntitlement();
+            });         
+        };
+        
+       var saveSelectedEntitlement = function() {
+            var orderId = j$(".entitlement-option.selected").data("id");
+            var orderKey = j$(".entitlement-option.selected").data("key");
+            var entitle = j$("#entitle").attr("checked") ? true:false;
+            var service = j$("#service").attr("checked") ? true:false;
+            var assets = j$("#assets").attr("checked") ? true:false;
+            if (orderKey == null || orderKey == "") {
+                alert("No order selected.\n\nPlease select an order and retry.");
+                return;
+            } else {
+                if(orderKey == 'No_Order')//Set Variable to close dialog on aftercomplete
+                {
+                    noOrderSelected = true;
+                }
+            
+                var j$submit = j$("#save-entitlement");
+                try {
+                    saveAndExit( JSON.stringify(selectedKeys), orderKey, orderId, assets, service, entitle);                    
+                } catch (err) {
+                    alert(err);
+                }
+            }
+        };
+                
+        
+        j$(function(){
+            // Attach the fancytree widget to an existing <div id="tree"> element
+            // and pass the tree options as an argument to the fancytree() function:
+            var statusSelectJSON ={!statusValuesJSON};
+              
+            j$("#treetable").fancytree({
+                extensions: ["table"],
+                selectMode: 3, // 1:single, 2:multi, 3:multi-hier
+                checkbox: {!showCheckboxes},
+                debugLevel: 3,
+                table: {
+                    indentation: 20,      // indent 20px per node level
+                },
+                source: {!treeJSON},
+                select: function(event, data) {
+                    selectedNodes = data.tree.getSelectedNodes();
+                    console.log(selectedNodes);
+                    data.tree.rootNode.visit(function(node){
+                        if(node.partsel && !node.selected) {
+                            selectedNodes.push(node);
+                        }
+                    });
+                },
+                rendercolumns: function(event, data) {
+                    var node = data.node;
+                    j$tdList = j$(node.tr).find(">td");
+                    
+                    var statusSelectString = j$("<select id='cliStatus_" + node.key + "' name='cliStatus_" + node.key + "'/>");
+                    j$.each(statusSelectJSON, function (index,value) {
+                        j$option = j$("<option />", {value: value.value, text: value.label});
+                        if(value.value==node.data.status) {
+                            j$option.prop("selected", true);
+                        }
+                        j$option.appendTo(statusSelectString);
+                    });
+                    
+                    if({!showCheckboxes}) {
+                        j$tdList.eq(2).html(statusSelectString).addClass("alignCenter");
+                    } else {
+                        j$tdList.eq(2).text(node.data.status).addClass("alignCenter");
+                    }
+                    j$tdList.eq(3).text(node.data.termStart).addClass("alignCenter");
+                    j$tdList.eq(4).text(node.data.termEnd).addClass("alignCenter");
+                    
+                /*    if(node.data.autoRenew==true)  
+                        j$tdList.eq(5).html("<span><img src={!URLFOR($Resource.CustomResources, 'images/ResourceSucceeded.png')}></span>").addClass("alignCenter");
+                    else 
+                        j$tdList.eq(5).html("<span><img src={!URLFOR($Resource.CustomResources, 'images/ResourceFailed.png')}></span>").addClass("alignCenter");
+                   
+                    j$tdList.eq(6).text(node.data.renewalCycle).addClass("alignCenter"); */
+                    
+                    //jjackson
+                    j$tdList.eq(5).text(node.data.Quantity).addClass("alignCenter");
+                    j$tdList.eq(6).text(node.data.Price).addClass("alignCenter");
+                    //shawks - BUG-00176: Add Delivery Method
+                   // j$tdList.eq(7).text(node.data.DeliveryMethod).addClass("alignCenter"); jjackson--removed this for CPQ because it is not used
+                }
+            });
+            
+            
+            j$("#treetable").delegate("select[name^='cliStatus']", "change", function(event){
+                event.stopPropagation();  // prevent fancytree activate for this row
+                var node = j$.ui.fancytree.getNode(event),
+                    j$input = j$(event.target)
+                    cliRecordIds = [];
+                
+                function _walkStatusSelect(node) {
+                    var i, l, child, cliRecordId
+                        children = node.children;
+        
+                    if(children) {
+                        for(i=0, l=children.length; i<l; i++) {
+                            child = children[i];
+                            // the selection state of a node is not relevant; we need the end-nodes
+                            cliRecordId = _walkStatusSelect(child);
+                            cliRecordIds.push(cliRecordId)
+                        }
+                    }
+                    j$(node.tr).find(">td select[name='cliStatus_" + node.key +"'] option[value='" + j$input.val() + "']").prop('selected', true);
+                    return node.key;
+                }
+                cliRecordIds.push(_walkStatusSelect(node));
+                Visualforce.remoting.Manager.invokeAction(
+                    "{!$RemoteAction.SubscriptionItemHierarchyExtension.updateStatus}",
+                    cliRecordIds, 
+                    j$input.val(),
+                    function(result, event){}, 
+                    {escape: true}
+                );
+            });    
+            
+            j$("#treetable").delegate("span[class='fancytree-title']", "click", function(event){
+                event.stopPropagation();  // prevent fancytree activate for this row
+                var node = j$.ui.fancytree.getNode(event);
+                // Use <a> href and target attributes to load the content:
+                if( node.data.href ){
+                    window.open(node.data.href, node.data.target);
+                }
+            });  
+        });
+        
+        
+        function showSetFields(name){
+            selectedKeys = j$.map(selectedNodes, function(node){if(node.title != null && node.title != ""){return node.key;}});
+            if(selectedKeys.length > 0){
+                j$("#massUpdatePopup").dialog("open");
+                j$("#massUpdatePopup").dialog("option", "title", name);
+                j$("#massUpdatePopup").dialog('option', 'position', 'center');
+                j$("#massUpdatePopup").dialog('option', 'closeOnEscape', true);
+            } else {
+                alert("Please select at least one Subscription Item");
+            }
+            return false;
+        }
+
+        var afterComplete = function () {
+            hidePopup();
+            return true;
+        }
+
+
+        var hidePopup = function(){
+            j$("#popup").dialog("close");
+            j$("#massUpdatePopup").dialog("close");
+        }
+        
+
+       var saveSelectedFields = function() {
+            <!--shawks - BUG-00176: Add massinput4 for Delivery Method -->
+            try {
+                saveFieldsandExit( JSON.stringify(selectedKeys),
+                j$("[id*='massinput1']").val(),
+                j$("[id*='massinput2'] option:selected").val(),
+                j$("[id*='massinput3'] option:selected").val(),
+                //j$("[id*='massinput4'] option:selected").val() jjackson--Delivery Method field won't be used in CPQ
+                );
+            } catch (err) {
+                alert(err);
+            }
+
+        };
+        
+        
+        
+        
+        function deleteItems() {
+            selectedKeys = j$.map(selectedNodes, function(node){
+                if(node.selected)
+                    return node.key;
+            });
+            if(selectedKeys.length > 0){
+                doDeleteItems(JSON.stringify(selectedKeys));
+            } else {
+                alert("Please select at least one Subscription line item");
+            }
+            return false;
+        }
+        
+         
+        function showDialog(name){
+        
+          <!--jjackson 3/2016 check to see if error message from controller has a value -->
+          var emessage = '{!returnmessage}';
+          if(!emessage)
+          {        
+            selectedKeys = j$.map(selectedNodes, function(node){return node.key;});
+            if(selectedKeys.length > 0){
+                j$("#popup").dialog("open");
+                j$("#popup").dialog("option", "title", name);
+                j$("#popup").dialog('option', 'position', 'center');
+                j$("#popup").dialog('option', 'closeOnEscape', true);
+                j$("#popup").dialog('option', 'draggable', false);
+            } else {
+                alert("Please select at least one contract line item");
+            }
+           }
+           else
+           { alert(emessage);  }
+            return false;
+        }
+    </script>   
+       
+    <apex:form >
+    
+        <apex:actionRegion >
+            <apex:actionFunction name="doDeleteItems" action="{!deleteContractLineItems}" reRender="redirectPanel, messagesId">
+                <apex:param name="selectedKeysJSON" value=""/>
+            </apex:actionFunction>
+            <apex:actionFunction name="saveAndExit" action="{!saveTasks}" oncomplete="afterComplete();" rerender="redirectPanel, messagesId">
+                   <apex:param name="selectedKeys" value="" /> 
+                   <apex:param name="processOrder" value="" />
+                   <apex:param name="orderId" value="" />
+               <!-- <apex:param name="affectAssets" value="" />
+                   <apex:param name="affectService" value="" />
+                   <apex:param name="affectEntitle" value="" /> -->
+            </apex:actionFunction> 
+        </apex:actionRegion>
+        
+        <div id="popup">
+            <apex:pageBlock >
+                <div style="overflow:auto; overflow-y: scroll;height:250px;" >
+                    <apex:pageBlockSection title="Select Order" columns="1" collapsible="false">                
+                        <div id="entitlement-block" >               
+                            <apex:repeat value="{!orderList}" var="e"> 
+                                <div class="entitlement-option"  data-id="{!orderMap[e].orderId}" data-key="{!orderMap[e].key}" data-name="{!orderMap[e].name}">
+                                    <input type="radio" value="{!orderMap[e].key}">
+                                        <b>{!orderMap[e].name}</b> 
+                                        </input> 
+                                </div>
+                            </apex:repeat>
+                        </div>
+                    </apex:pageBlockSection>
+                </div>
+              <!-- <apex:pageBlockSection columns="2">
+                    <apex:pageBlockSectionItem >
+                        <input type="checkbox" id="entitle" value="entitle">Affect Entitlements </input>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >    
+                        <input type="checkbox" id="service" value="Servide">Affect Service Contracts</input>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                        <input type="checkbox" id="assets" value="Assets">Affect Product Inventory</input>
+                    </apex:pageBlockSectionItem>
+                </apex:pageBlockSection> -->
+                <apex:actionStatus id="mySearchStatus1" >
+                    <apex:facet name="stop">
+                        <apex:commandButton style="float:right;" value="Finalize Order" onclick="saveSelectedEntitlement();" oncomplete="afterComplete();" rerender="redirectPanel, pageMessages" status="mySearchStatus1"/>
+                    </apex:facet>
+                    <apex:facet name="start">
+                         <apex:outputPanel >
+                               <apex:commandButton style="float:right;" value="Processing..." status="mySearchStatus1" disabled="true"/>
+                               <apex:image value="/img/loading32.gif" style="float:right;height: 15px;"/>
+                         </apex:outputPanel>
+                    </apex:facet>
+                </apex:actionStatus>
+                <apex:outputPanel id="redirectPanel" >
+                    <apex:outputText rendered="{!shouldRedirect}">
+                        <script type="text/javascript">
+                            window.top.location.href = '{!redirectUrl}';
+                        </script>
+                    </apex:outputText> 
+                </apex:outputPanel>
+            </apex:pageBlock>
+        </div> 
+        
+        <div id="cliHierarchy">
+            <apex:pageBlock mode="maindetail" id="mDetail">       
+                <apex:pageBlockButtons location="top"> 
+                  
+      				<!--  <apex:commandButton rendered="{!showNewButton}" onclick="window.open('/{!subscriptionprefix}/e?CF00NZ0000000sNSB={!con.ContractNumber}&CF00NZ0000000sNSB_lkid={!con.Id}&CF00Ng0000003tNA5_lkid={!accid}&saveURL=%2F{!con.Id}&retURL=%2F{!con.Id}','_top')" value="New Subscription Item" immediate="true" rerender="blank"/>
+                          <apex:commandButton rendered="{!showNewButton}" onclick="window.open('/{!subscriptionprefix}/e?CF00Ng0000003tNA5={!accname}&CF00Ng0000003tNAG={!contnumber}&saveURL=%2F{!con.id}&retURL=%2F{!con.id}','_top')" value="New Subscription Item" immediate="true" rerender="blank"/> jjackson this line stopped working because the field ids changed in production -->
+                    <apex:commandButton rendered="{!showNewButton}" onclick="window.open('/{!subscriptionprefix}/e?CF00N2A00000Dot5P={!accname}&CF00N2A00000Dot5a={!contnumber}&saveURL=%2F{!con.id}&retURL=%2F{!con.id}','_top')" value="New Subscription Item" immediate="true" rerender="blank"/>
+      				<apex:commandButton rendered="{!treeSize > 0 && showDelete}" onclick="return deleteItems();" oncomplete="window.opener.location.href= 'https://' + window.location.hostname + '/{!con.id}';" value="Delete Subscription Item(s)" />
+                    <apex:commandButton rendered="{!treeSize > 0 && showFinalizeOrderButton}" onclick="return showDialog('Finalize Order');" value="Create or Update Order" />
+                    <apex:commandbutton onclick="return showSetFields('');" value="Mass Update Fields" />
+                </apex:pageBlockButtons> 
+                <apex:pageBlockSection columns="1">
+                    <apex:pageMessages id="messagesId" showDetail="true" escape="false" />
+                    <table id="treetable">
+                        <thead>
+                            <tr> 
+                                <th></th>  
+                                <th></th>
+                                <th class="alignCenter">Status</th>
+                                <th class="alignCenter">Term Start</th>
+                                <th class="alignCenter">Term End</th>
+                      <!--      <th class="alignCenter">Auto Renew</th> -->
+                      <!--      <th class="alignCenter">Renewal Cycle</th>       -->
+                                <th class="alignCenter">Quantity</th>
+                                <th class="alignCenter">Price</th>
+                               <!-- shawks - BUG-00176: Add Delivery Method column -->
+                              <!-- <th class="alignCenter">Delivery Method</th>   jjackson 9/2018 no longer need delivery method for CPQ -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td></td>  
+                                <td></td>  
+                                <td></td>  
+                                <td></td>  
+                                <td></td>  
+                                <td></td>
+                                <td></td>  
+                                <td></td>  
+                            </tr>
+                        </tbody>
+                    </table>
+                </apex:pageBlockSection>
+            </apex:pageBlock>
+        </div> 
+        <div id="massUpdatePopup">
+            <apex:pageBlock >
+                <div style="overflow:auto;overflow-y: scroll;height:250px;" >
+                    <apex:pageBlockSection title="Fields to Update" columns="1" collapsible="false">
+                            <apex:inputField id="massinput1" value="{!cli.SBQQ__Quantity__c}"/><br/>
+                            <apex:inputField id="massinput2" value="{!cli.Status__c}"/><br/> 
+                            <apex:inputField id="massinput3" value="{!cli.Project_Type__c}"/><br/>
+                           <!-- shawks - BUG-00176: Add Delivery Method -->
+                        <!-- <apex:inputField id="massinput4" value="{!cli.Delivery_Method__c}"/><br/>  jjackson 9/2018 don't need delivery method for CPQ -->
+                    </apex:pageBlockSection>
+                </div>
+                <apex:outputPanel id="redirectPanel" >
+                    <apex:outputText rendered="{!shouldRedirect}">
+                        <script type="text/javascript">
+                            window.top.location.href = '{!redirectUrl}';
+                        </script>
+                    </apex:outputText>
+                </apex:outputPanel>
+                <apex:actionStatus id="mySearchStatus1" >
+                    <apex:facet name="stop">
+                        <apex:commandButton style="float:right;" value="Finalize" onclick="saveSelectedFields();" oncomplete="afterComplete();" rerender="redirectPanel, pageMessages" status="mySearchStatus1"/>
+                    </apex:facet>
+                    <apex:facet name="start">
+                         <apex:outputPanel >
+                               <apex:commandButton style="float:right;" value="Processing..." status="mySearchStatus1" disabled="true"/>
+                               <apex:image value="/img/loading32.gif" style="float:right;height: 15px;"/>
+                         </apex:outputPanel>
+                    </apex:facet>
+                </apex:actionStatus>
+                <apex:actionFunction name="saveFieldsandExit" action="{!massUpdateFields}" oncomplete="afterComplete();" rerender="redirectPanel, pagemessages">
+                       <apex:param name="selectedKeys" value="" />
+                       <apex:param name="selectedQuantity" value="" />
+                       <apex:param name="selectedStatus" value=""/>
+                       <apex:param name="selectedProjectType" value="" />
+                      <!-- shawks - BUG-00176: Add Delivery Method -->
+                      <!-- <apex:param name="selectedDeliveryMethod" value="" /> jjackson 9/2018 don't need for CPQ -->
+                </apex:actionFunction>
+
+            </apex:pageBlock>
+        </div>
+        
+    </apex:form>
+    
+    
+    
+    
+    
+</apex:page>

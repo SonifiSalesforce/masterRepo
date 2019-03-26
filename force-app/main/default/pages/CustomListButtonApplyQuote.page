@@ -1,0 +1,29 @@
+<apex:page standardcontroller="Opportunity"
+    extensions="CustomListButtonAppQuoteExt">
+    <apex:form >
+        <apex:pageMessages />
+        <apex:pageBlock >
+            <div align="center" draggable="false">
+                <apex:commandButton value="Apply Quote to Oppty"
+                                    action="{!ApplyQuoteToOpp}" />
+              <!--  <apex:commandButton value="New Quote" action="{!NewQuote}" />   -->
+            </div>
+            <apex:pageblockTable value="{!lstcheckedquotes}" var="quo">
+                <apex:column >
+                    <apex:inputCheckbox value="{!quo.selected}" />
+                </apex:column>
+                <apex:column value="{!quo.qte.quotenumber}" />
+                <apex:column headerValue="Quote Name">
+                    <apex:outputLink value="{!URLFOR($Action.Quote.View, quo.qte.id)}"
+                        target="_blank">{!quo.qte.name}</apex:outputLink>
+                </apex:column>
+                <apex:column value="{!quo.qte.expirationdate}" />
+                <apex:column value="{!quo.qte.totalprice}" />
+                <apex:column value="{!quo.qte.Discount__c}" />
+                <apex:column value="{!quo.qte.createddate}" />
+                <apex:column value="{!quo.qte.createdbyid}" />
+            </apex:pageblockTable>
+
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>

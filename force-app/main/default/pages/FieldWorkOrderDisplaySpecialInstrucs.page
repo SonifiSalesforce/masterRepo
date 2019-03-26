@@ -1,0 +1,5 @@
+<apex:page showHeader="false" StandardController="WorkOrder" extensions="FieldWorkOrderDisplaySpecialInstructions"  >
+       <apex:dataList value="{!lstinstructions}" var="inst">
+            <apex:outputText value="{!inst.Instruction_Description__c}"    />
+       </apex:dataList>
+ </apex:page>

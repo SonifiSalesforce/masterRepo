@@ -1,0 +1,18 @@
+<apex:page standardController="Opportunity" showHeader="false" extensions="Submit_To_Deal_DeskController" sidebar="false">
+
+    <script src="/soap/ajax/30.0/connection.js"/>
+        <script src="/soap/ajax/30.0/apex.js"/>
+
+    <script>
+            /* if ("{!Opportunity.Proposal_Recipient__c}" != "" ){ 
+            sforce.apex.execute("SpringCMRestHelper","StartWorkflow", {sfId:"{!Opportunity.Id}", sfType:"Opportunity",workflowname:"Create Contract"});
+            window.alert("Contract Request for {!Opportunity.Name} was submitted to Deal Desk successfully" ); 
+            } 
+        else if ("{!Opportunity.Proposal_Recipient__c}" == "" ){ 
+            window.alert("Primary Contact field can't be empty in order to proceed with the workflow ") 
+            }*/
+            
+            window.alert(`{!StartWorkflow}`);
+    		window.close();
+    </script>
+</apex:page>

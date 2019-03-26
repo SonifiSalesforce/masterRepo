@@ -1,0 +1,5 @@
+<apex:page title="Activity List" 
+           name="ActivityListPage"
+           controller="ActivityListExtension"
+		   action="{!checkRedirect}">
+</apex:page>
